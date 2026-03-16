@@ -1,4 +1,3 @@
-using Markdig;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
 using Mdq.Core.Shared;
@@ -10,12 +9,12 @@ public static class MarkdownParser
     public static Result<MarkdownDocument, MarkdownParseError> Parse(string markdown)
     {
         if (string.IsNullOrWhiteSpace(markdown))
-            return new Result<MarkdownDocument, MarkdownParseError>.Ok(new MarkdownDocument([]));
+            return new MarkdownDocument([]);
 
         var markdigDoc = Markdig.Markdown.Parse(markdown);
         var flatSections = BuildFlatSections(markdigDoc);
         var tree = BuildSectionTree(flatSections);
-        return new Result<MarkdownDocument, MarkdownParseError>.Ok(new MarkdownDocument(tree));
+        return new MarkdownDocument(tree);
     }
 
     // -------------------------------------------------------------------------
@@ -50,13 +49,14 @@ public static class MarkdownParser
         return sections;
     }
 
-    private static Paragraph? MapBlockToParagraph(Block block) => block switch
-    {
-        ParagraphBlock p => new Paragraph.TextBlock(ExtractInlineText(p.Inline)),
-        Markdig.Syntax.ListBlock lb => MapListBlock(lb),
-        QuoteBlock qb => new Paragraph.BlockQuote(ExtractQuoteText(qb)),
-        _ => null
-    };
+    private static Paragraph? MapBlockToParagraph(Block block)
+        => block switch
+        {
+            ParagraphBlock p => new Paragraph.TextBlock(ExtractInlineText(p.Inline)),
+            ListBlock lb => MapListBlock(lb),
+            QuoteBlock qb => new Paragraph.BlockQuote(ExtractQuoteText(qb)),
+            _ => null
+        };
 
     // -------------------------------------------------------------------------
     // Phase 2: nest flat sections into a tree based on heading level
@@ -107,8 +107,8 @@ public static class MarkdownParser
         return rootChildren;
     }
 
-    private static Section ToSection(FlatSection flat, List<Section> children) =>
-        new(flat.HeadingText, flat.HeadingLevel, flat.Paragraphs, children);
+    private static Section ToSection(FlatSection flat, List<Section> children)
+        => new(flat.HeadingText, flat.HeadingLevel, flat.Paragraphs, children);
 
     // -------------------------------------------------------------------------
     // List mapping

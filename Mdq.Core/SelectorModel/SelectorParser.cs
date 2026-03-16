@@ -20,7 +20,7 @@ public static class SelectorParser
     public static Result<SelectorChain, SelectorParseError> Parse(string selector)
     {
         if (string.IsNullOrEmpty(selector))
-            return Ok(new SelectorChain([]));
+            return new SelectorChain([]);
 
         var segments = new List<SelectorSegment>();
         int pos = 0;
@@ -33,7 +33,7 @@ public static class SelectorParser
             {
                 var result = ParseHeading(selector, pos);
                 if (result is Result<(SelectorSegment, int), SelectorParseError>.Err err)
-                    return Fail(err.Error);
+                    return err.Error;
 
                 var (segment, next) = ((Result<(SelectorSegment, int), SelectorParseError>.Ok)result).Value;
                 segments.Add(segment);
@@ -45,7 +45,7 @@ public static class SelectorParser
             {
                 var result = ParseContentSelector(selector, pos);
                 if (result is Result<(SelectorSegment, int), SelectorParseError>.Err err)
-                    return Fail(err.Error);
+                    return err.Error;
 
                 var (segment, next) = ((Result<(SelectorSegment, int), SelectorParseError>.Ok)result).Value;
                 segments.Add(segment);
@@ -53,12 +53,12 @@ public static class SelectorParser
                 continue;
             }
 
-            return Fail(new SelectorParseError(
+            return new SelectorParseError(
                 $"Unexpected character '{ch}' at position {pos}. Expected '#' or '.'.",
-                pos));
+                pos);
         }
 
-        return Ok(new SelectorChain(segments));
+        return new SelectorChain(segments);
     }
 
     // -------------------------------------------------------------------------
@@ -71,7 +71,7 @@ public static class SelectorParser
         int nameStart = pos + 1;
 
         if (nameStart >= input.Length || input[nameStart] == '#' || input[nameStart] == '.')
-            return SegmentErr($"Expected heading name after '#' at position {pos}.", pos);
+            return new SelectorParseError($"Expected heading name after '#' at position {pos}.", pos);
 
         int nameEnd = nameStart;
         while (nameEnd < input.Length && input[nameEnd] != '#' && input[nameEnd] != '.')
@@ -79,9 +79,9 @@ public static class SelectorParser
 
         var name = input[nameStart..nameEnd].Trim();
         if (name.Length == 0)
-            return SegmentErr($"Heading name at position {nameStart} is empty or whitespace.", nameStart);
+            return new SelectorParseError($"Heading name at position {nameStart} is empty or whitespace.", nameStart);
 
-        return SegmentOk(new SelectorSegment.Heading(name), nameEnd);
+        return (new SelectorSegment.Heading(name), nameEnd);
     }
 
     private static Result<(SelectorSegment, int), SelectorParseError> ParseContentSelector(string input, int pos)
@@ -97,13 +97,11 @@ public static class SelectorParser
 
         return keyword switch
         {
-            "text"    => SegmentOk(new SelectorSegment.Text(), keyEnd),
-            "heading" => SegmentOk(new SelectorSegment.HeadingContent(), keyEnd),
-            "paragraph" => ParseIndexedSelector(input, keyEnd, pos,
-                            idx => new SelectorSegment.ParagraphAt(idx)),
-            "item"    => ParseIndexedSelector(input, keyEnd, pos,
-                            idx => new SelectorSegment.ItemAt(idx)),
-            _ => SegmentErr(
+            "text" => (new SelectorSegment.Text(), keyEnd),
+            "heading" => (new SelectorSegment.HeadingContent(), keyEnd),
+            "paragraph" => ParseIndexedSelector(input, keyEnd, pos, idx => new SelectorSegment.ParagraphAt(idx)),
+            "item" => ParseIndexedSelector(input, keyEnd, pos, idx => new SelectorSegment.ItemAt(idx)),
+            _ => new SelectorParseError(
                     $"Unknown selector '.{keyword}' at position {pos}. " +
                     "Expected '.text', '.heading', '.paragraph(N)', or '.item(N)'.",
                     pos)
@@ -117,9 +115,11 @@ public static class SelectorParser
         Func<int, SelectorSegment> factory)
     {
         if (pos >= input.Length || input[pos] != '(')
-            return SegmentErr(
+        {
+            return new SelectorParseError(
                 $"Expected '(' after selector keyword at position {pos}.",
                 pos);
+        }
 
         int argStart = pos + 1;
         int argEnd = argStart;
@@ -127,38 +127,28 @@ public static class SelectorParser
             argEnd++;
 
         if (argEnd >= input.Length)
-            return SegmentErr(
+        {
+            return new SelectorParseError(
                 $"Missing closing ')' for selector starting at position {selectorStart}.",
                 selectorStart);
+        }
 
         var argText = input[argStart..argEnd].Trim();
 
         if (!int.TryParse(argText, out int index))
-            return SegmentErr(
+        {
+            return new SelectorParseError(
                 $"Selector argument '{argText}' at position {argStart} is not an integer.",
                 argStart);
+        }
 
         if (index <= 0)
-            return SegmentErr(
+        {
+            return new SelectorParseError(
                 $"Selector argument {index} at position {argStart} must be a positive integer (>= 1).",
                 argStart);
+        }
 
-        return SegmentOk(factory(index), argEnd + 1); // +1 to consume ')'
+        return (factory(index), argEnd + 1); // +1 to consume ')'
     }
-
-    // -------------------------------------------------------------------------
-    // Result helpers
-    // -------------------------------------------------------------------------
-
-    private static Result<SelectorChain, SelectorParseError> Ok(SelectorChain chain) =>
-        new Result<SelectorChain, SelectorParseError>.Ok(chain);
-
-    private static Result<SelectorChain, SelectorParseError> Fail(SelectorParseError error) =>
-        new Result<SelectorChain, SelectorParseError>.Err(error);
-
-    private static Result<(SelectorSegment, int), SelectorParseError> SegmentOk(SelectorSegment seg, int next) =>
-        new Result<(SelectorSegment, int), SelectorParseError>.Ok((seg, next));
-
-    private static Result<(SelectorSegment, int), SelectorParseError> SegmentErr(string message, int position) =>
-        new Result<(SelectorSegment, int), SelectorParseError>.Err(new SelectorParseError(message, position));
 }

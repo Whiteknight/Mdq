@@ -2,7 +2,7 @@ using System.Text;
 
 namespace Mdq.Core.SelectorModel;
 
-public record SelectorChain(IReadOnlyList<SelectorSegment> Segments)
+public readonly record struct SelectorChain(IReadOnlyList<SelectorSegment> Segments)
 {
     public bool IsEmpty => Segments.Count == 0;
 

@@ -1,7 +1,7 @@
 using System.Text;
 using Mdq.Core.DocumentModel;
-using Mdq.Core.Shared;
 using Mdq.Core.SelectorModel;
+using Mdq.Core.Shared;
 
 namespace Mdq.Core.QueryEngine;
 
@@ -18,7 +18,7 @@ public static class QueryExecutor
     public static Result<string, QueryError> Execute(MarkdownDocument document, SelectorChain chain)
     {
         if (chain.IsEmpty)
-            return Ok(RenderDocument(document));
+            return RenderDocument(document);
 
         return ExecuteSegments(document.Sections, chain.Segments, currentLevel: 1, segmentIndex: 0);
     }
@@ -38,7 +38,7 @@ public static class QueryExecutor
         int segmentIndex)
     {
         if (segmentIndex >= segments.Count)
-            return Ok(RenderSections(sections));
+            return RenderSections(sections);
 
         var segment = segments[segmentIndex];
 
@@ -71,12 +71,12 @@ public static class QueryExecutor
             string.Equals(s.HeadingText, headingSeg.Name, StringComparison.Ordinal));
 
         if (matched is null)
-            return Fail(new QueryError.HeadingNotFound(headingSeg.Name, currentLevel));
+            return new QueryError.HeadingNotFound(headingSeg.Name, currentLevel);
 
         int nextIndex = segmentIndex + 1;
 
         if (nextIndex >= segments.Count)
-            return Ok(RenderSection(matched));
+            return RenderSection(matched);
 
         var nextSegment = segments[nextIndex];
 
@@ -98,12 +98,12 @@ public static class QueryExecutor
 
         return segment switch
         {
-            SelectorSegment.Text          => ResolveText(section),
+            SelectorSegment.Text => ResolveText(section),
             SelectorSegment.HeadingContent => ResolveHeadingContent(section),
-            SelectorSegment.ParagraphAt p  => ResolveParagraph(section, segments, segmentIndex, p),
-            SelectorSegment.ItemAt item    => ResolveItemOnSection(section, segments, segmentIndex, item),
-            SelectorSegment.Heading h      => Fail(new QueryError.HeadingNotFound(h.Name, section.HeadingLevel + 1)),
-            _                              => Fail(new QueryError.HeadingNotFound("(unknown)", 0))
+            SelectorSegment.ParagraphAt p => ResolveParagraph(section, segments, segmentIndex, p),
+            SelectorSegment.ItemAt item => ResolveItemOnSection(section, segments, segmentIndex, item),
+            SelectorSegment.Heading h => new QueryError.HeadingNotFound(h.Name, section.HeadingLevel + 1),
+            _ => new QueryError.HeadingNotFound("(unknown)", 0)
         };
     }
 
@@ -121,15 +121,15 @@ public static class QueryExecutor
         foreach (var child in section.Children)
             parts.Add(RenderSection(child));
 
-        return Ok(string.Join("\n\n", parts));
+        return string.Join("\n\n", parts);
     }
 
     // -------------------------------------------------------------------------
     // .heading
     // -------------------------------------------------------------------------
 
-    private static Result<string, QueryError> ResolveHeadingContent(Section section) =>
-        Ok(section.HeadingText ?? string.Empty);
+    private static Result<string, QueryError> ResolveHeadingContent(Section section)
+        => section.HeadingText ?? string.Empty;
 
     // -------------------------------------------------------------------------
     // .paragraph(N)
@@ -143,13 +143,13 @@ public static class QueryExecutor
     {
         int count = section.Paragraphs.Count;
         if (paragraphSeg.Index > count)
-            return Fail(new QueryError.ParagraphOutOfRange(paragraphSeg.Index, count));
+            return new QueryError.ParagraphOutOfRange(paragraphSeg.Index, count);
 
         var paragraph = section.Paragraphs[paragraphSeg.Index - 1];
 
         int nextIndex = segmentIndex + 1;
         if (nextIndex >= segments.Count)
-            return Ok(RenderParagraph(paragraph));
+            return RenderParagraph(paragraph);
 
         return ExecuteParagraphSegment(paragraph, segments, nextIndex);
     }
@@ -172,9 +172,9 @@ public static class QueryExecutor
         {
             // If there are paragraphs but none are lists, report NotAList on the first paragraph.
             if (section.Paragraphs.Count > 0)
-                return Fail(new QueryError.NotAList());
+                return new QueryError.NotAList();
 
-            return Fail(new QueryError.ItemOutOfRange(itemSeg.Index, 0));
+            return new QueryError.ItemOutOfRange(itemSeg.Index, 0);
         }
 
         return ResolveItemOnList(listBlock, segments, segmentIndex, itemSeg);
@@ -192,10 +192,10 @@ public static class QueryExecutor
         var segment = segments[segmentIndex];
 
         if (segment is not SelectorSegment.ItemAt itemSeg)
-            return Ok(RenderParagraph(paragraph));
+            return RenderParagraph(paragraph);
 
         if (paragraph is not Paragraph.ListBlock listBlock)
-            return Fail(new QueryError.NotAList());
+            return new QueryError.NotAList();
 
         return ResolveItemOnList(listBlock, segments, segmentIndex, itemSeg);
     }
@@ -208,13 +208,13 @@ public static class QueryExecutor
     {
         int count = listBlock.Items.Count;
         if (itemSeg.Index > count)
-            return Fail(new QueryError.ItemOutOfRange(itemSeg.Index, count));
+            return new QueryError.ItemOutOfRange(itemSeg.Index, count);
 
         var item = listBlock.Items[itemSeg.Index - 1];
 
         int nextIndex = segmentIndex + 1;
         if (nextIndex >= segments.Count)
-            return Ok(RenderListItem(item));
+            return RenderListItem(item);
 
         return ExecuteListItemSegment(item, segments, nextIndex);
     }
@@ -227,10 +227,10 @@ public static class QueryExecutor
         var segment = segments[segmentIndex];
 
         if (segment is not SelectorSegment.ItemAt itemSeg)
-            return Ok(RenderListItem(item));
+            return RenderListItem(item);
 
         if (item.SubList is null)
-            return Fail(new QueryError.ItemOutOfRange(itemSeg.Index, 0));
+            return new QueryError.ItemOutOfRange(itemSeg.Index, 0);
 
         return ResolveItemOnList(item.SubList, segments, segmentIndex, itemSeg);
     }
@@ -264,13 +264,14 @@ public static class QueryExecutor
         return string.Join("\n\n", parts.Where(p => p.Length > 0));
     }
 
-    private static string RenderParagraph(Paragraph paragraph) => paragraph switch
-    {
-        Paragraph.TextBlock tb  => tb.Content,
-        Paragraph.BlockQuote bq => RenderBlockQuote(bq),
-        Paragraph.ListBlock lb  => RenderListBlock(lb, indent: 0),
-        _                       => string.Empty
-    };
+    private static string RenderParagraph(Paragraph paragraph)
+        => paragraph switch
+        {
+            Paragraph.TextBlock tb => tb.Content,
+            Paragraph.BlockQuote bq => RenderBlockQuote(bq),
+            Paragraph.ListBlock lb => RenderListBlock(lb, indent: 0),
+            _ => string.Empty
+        };
 
     private static string RenderBlockQuote(Paragraph.BlockQuote bq)
     {
@@ -313,14 +314,4 @@ public static class QueryExecutor
         sb.Append(RenderListBlock(item.SubList, indent: 0));
         return sb.ToString();
     }
-
-    // -------------------------------------------------------------------------
-    // Result helpers
-    // -------------------------------------------------------------------------
-
-    private static Result<string, QueryError> Ok(string value) =>
-        new Result<string, QueryError>.Ok(value);
-
-    private static Result<string, QueryError> Fail(QueryError error) =>
-        new Result<string, QueryError>.Err(error);
 }
