@@ -6,7 +6,7 @@ namespace Mdq.Core.DocumentModel;
 
 public static class MarkdownParser
 {
-    public static Result<MarkdownDocument, MarkdownParseError> Parse(string markdown)
+    public static Result<MarkdownDocument, MdqError> Parse(string markdown)
     {
         if (string.IsNullOrWhiteSpace(markdown))
             return new MarkdownDocument([]);

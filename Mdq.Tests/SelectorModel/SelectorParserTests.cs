@@ -1,5 +1,7 @@
 using AwesomeAssertions;
+using Mdq.Core.SelectorModel;
 using Mdq.Core.Shared;
+
 using SM = Mdq.Core.SelectorModel;
 
 namespace Mdq.Tests.SelectorModel;
@@ -14,15 +16,15 @@ public class SelectorParserTests
     private static SM.SelectorChain ParseOk(string selector)
     {
         var result = SM.SelectorParser.Parse(selector);
-        result.Should().BeOfType<Result<SM.SelectorChain, SM.SelectorParseError>.Ok>();
-        return ((Result<SM.SelectorChain, SM.SelectorParseError>.Ok)result).Value;
+        result.Should().BeOfType<Result<SM.SelectorChain, MdqError>.Ok>();
+        return ((Result<SM.SelectorChain, MdqError>.Ok)result).Value;
     }
 
     private static SM.SelectorParseError ParseErr(string selector)
     {
         var result = SM.SelectorParser.Parse(selector);
-        result.Should().BeOfType<Result<SM.SelectorChain, SM.SelectorParseError>.Err>();
-        return ((Result<SM.SelectorChain, SM.SelectorParseError>.Err)result).Error;
+        result.Should().BeOfType<Result<SM.SelectorChain, MdqError>.Err>();
+        return ((Result<SM.SelectorChain, MdqError>.Err)result).Error as SelectorParseError;
     }
 
     // -------------------------------------------------------------------------

@@ -17,7 +17,7 @@ namespace Mdq.Core.SelectorModel;
 /// </summary>
 public static class SelectorParser
 {
-    public static Result<SelectorChain, SelectorParseError> Parse(string selector)
+    public static Result<SelectorChain, MdqError> Parse(string selector)
     {
         if (string.IsNullOrEmpty(selector))
             return new SelectorChain([]);

@@ -1,8 +1,8 @@
 using AwesomeAssertions;
 using Mdq.Core.DocumentModel;
 using Mdq.Core.QueryEngine;
-using Mdq.Core.Shared;
 using Mdq.Core.SelectorModel;
+using Mdq.Core.Shared;
 
 namespace Mdq.Tests.QueryEngine;
 
@@ -17,26 +17,26 @@ public class QueryExecutorTests
     {
         var chain = ParseChain(selector);
         var result = QueryExecutor.Execute(doc, chain);
-        result.Should().BeOfType<Result<string, QueryError>.Ok>(
+        result.Should().BeOfType<Result<string, MdqError>.Ok>(
             $"expected Ok but got Err for selector '{selector}'");
-        return ((Result<string, QueryError>.Ok)result).Value;
+        return ((Result<string, MdqError>.Ok)result).Value;
     }
 
     private static QueryError ExecuteErr(MarkdownDocument doc, string selector)
     {
         var chain = ParseChain(selector);
         var result = QueryExecutor.Execute(doc, chain);
-        result.Should().BeOfType<Result<string, QueryError>.Err>(
+        result.Should().BeOfType<Result<string, MdqError>.Err>(
             $"expected Err but got Ok for selector '{selector}'");
-        return ((Result<string, QueryError>.Err)result).Error;
+        return ((Result<string, MdqError>.Err)result).Error as QueryError;
     }
 
     private static SelectorChain ParseChain(string selector)
     {
         var result = SelectorParser.Parse(selector);
-        result.Should().BeOfType<Result<SelectorChain, SelectorParseError>.Ok>(
+        result.Should().BeOfType<Result<SelectorChain, MdqError>.Ok>(
             $"selector '{selector}' should parse without error");
-        return ((Result<SelectorChain, SelectorParseError>.Ok)result).Value;
+        return ((Result<SelectorChain, MdqError>.Ok)result).Value;
     }
 
     // -------------------------------------------------------------------------

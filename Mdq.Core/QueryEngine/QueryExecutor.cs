@@ -15,12 +15,13 @@ public static class QueryExecutor
     // Public entry point
     // -------------------------------------------------------------------------
 
-    public static Result<string, QueryError> Execute(MarkdownDocument document, SelectorChain chain)
+    public static Result<string, MdqError> Execute(MarkdownDocument document, SelectorChain chain)
     {
         if (chain.IsEmpty)
             return RenderDocument(document);
 
-        return ExecuteSegments(document.Sections, chain.Segments, currentLevel: 1, segmentIndex: 0);
+        return ExecuteSegments(document.Sections, chain.Segments, currentLevel: 1, segmentIndex: 0)
+            .MapError(e => (MdqError)e);
     }
 
     // -------------------------------------------------------------------------

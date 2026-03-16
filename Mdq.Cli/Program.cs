@@ -26,64 +26,37 @@ internal static class Program
         var filePath = args[0];
         var selectorArg = args[1];
 
-        var readResult = ReadFile(filePath);
-        if (readResult is Result<string, string>.Err fileErr)
-        {
-            Console.Error.WriteLine(fileErr.Error);
-            return 1;
-        }
-
-        var fileContent = ((Result<string, string>.Ok)readResult).Value;
-
-        var parseResult = MarkdownParser.Parse(fileContent);
-        if (parseResult is Result<MarkdownDocument, MarkdownParseError>.Err parseErr)
-        {
-            Console.Error.WriteLine($"Markdown parse error: {parseErr.Error.Message}");
-            return 1;
-        }
-
-        var document = ((Result<MarkdownDocument, MarkdownParseError>.Ok)parseResult).Value;
-
-        var selectorResult = SelectorParser.Parse(selectorArg);
-        if (selectorResult is Result<SelectorChain, SelectorParseError>.Err selectorErr)
-        {
-            Console.Error.WriteLine($"Selector parse error at position {selectorErr.Error.Position}: {selectorErr.Error.Message}");
-            return 1;
-        }
-
-        var chain = ((Result<SelectorChain, SelectorParseError>.Ok)selectorResult).Value;
-
-        var queryResult = QueryExecutor.Execute(document, chain);
-        if (queryResult is Result<string, QueryError>.Err queryErr)
-        {
-            Console.Error.WriteLine($"Query error: {queryErr.Error.Message}");
-            return 1;
-        }
-
-        var output = ((Result<string, QueryError>.Ok)queryResult).Value;
-        Console.WriteLine(output);
-        return 0;
+        return ReadFile(filePath)
+            .Bind(MarkdownParser.Parse)
+            .With(_ => SelectorParser.Parse(selectorArg))
+            .Bind((args) => QueryExecutor.Execute(args.Item1, args.Item2))
+            .Switch(
+                v => Console.WriteLine(v),
+                e => Console.Error.WriteLine($"Error: {e.Message}"))
+            .Match(
+                _ => 0,
+                _ => 1);
 
         // ---------------------------------------------------------------------------
         // Helpers
         // ---------------------------------------------------------------------------
 
-        static Result<string, string> ReadFile(string path)
+        static Result<string, MdqError> ReadFile(string path)
         {
             if (!File.Exists(path))
-                return new Result<string, string>.Err($"File not found: {path}");
+                return new UnknownMdqError($"File not found: {path}");
 
             try
             {
-                return new Result<string, string>.Ok(File.ReadAllText(path));
+                return File.ReadAllText(path);
             }
             catch (IOException ex)
             {
-                return new Result<string, string>.Err($"Could not read file '{path}': {ex.Message}");
+                return new UnknownMdqError($"Could not read file '{path}': {ex.Message}");
             }
             catch (UnauthorizedAccessException ex)
             {
-                return new Result<string, string>.Err($"Access denied reading file '{path}': {ex.Message}");
+                return new UnknownMdqError($"Access denied reading file '{path}': {ex.Message}");
             }
         }
     }

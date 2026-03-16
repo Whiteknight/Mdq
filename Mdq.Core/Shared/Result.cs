@@ -8,17 +8,59 @@ public abstract record Result<T, E>
     public static implicit operator Result<T, E>(T value) => new Ok(value);
     public static implicit operator Result<T, E>(E error) => new Err(error);
 
-    public Result<U, E> Map<U>(Func<T, U> f) => this switch
-    {
-        Ok(var v) => new Result<U, E>.Ok(f(v)),
-        Err(var e) => new Result<U, E>.Err(e),
-        _ => throw new InvalidOperationException()
-    };
+    public Result<U, E> Map<U>(Func<T, U> f)
+        => this switch
+        {
+            Ok(var v) => new Result<U, E>.Ok(f(v)),
+            Err(var e) => new Result<U, E>.Err(e),
+            _ => throw new InvalidOperationException()
+        };
 
-    public Result<U, E> Bind<U>(Func<T, Result<U, E>> f) => this switch
+    public Result<U, E> Bind<U>(Func<T, Result<U, E>> f)
+        => this switch
+        {
+            Ok(var v) => f(v),
+            Err(var e) => new Result<U, E>.Err(e),
+            _ => throw new InvalidOperationException()
+        };
+
+    public Result<T, F> MapError<F>(Func<E, F> f)
+        => this switch
+        {
+            Ok(var v) => new Result<T, F>.Ok(v),
+            Err(var e) => new Result<T, F>.Err(f(e)),
+            _ => throw new InvalidOperationException()
+        };
+
+    public Result<(T, T2), E> With<T2>(Func<T, Result<T2, E>> getOther)
+        => this switch
+        {
+            Ok(var v1) => getOther(v1) switch
+            {
+                Ok(T2 v2) => (v1, v2),
+                Err(var e2) => e2,
+                _ => throw new InvalidOperationException()
+            },
+            Err(var e) => new Result<(T, T2), E>.Err(e),
+            _ => throw new InvalidOperationException()
+        };
+
+    public Result<T, E> Switch(Action<T> onValue, Action<E> onError)
     {
-        Ok(var v) => f(v),
-        Err(var e) => new Result<U, E>.Err(e),
-        _ => throw new InvalidOperationException()
-    };
+        if (this is Ok(var v))
+            onValue(v);
+        else if (this is Err(var e))
+            onError(e);
+        else
+            throw new InvalidOperationException();
+        return this;
+    }
+
+    public TOut Match<TOut>(Func<T, TOut> onValue, Func<E, TOut> onError)
+        => this switch
+        {
+            Ok(var v) => onValue(v),
+            Err(var e) => onError(e),
+            _ => throw new InvalidOperationException()
+        };
 }

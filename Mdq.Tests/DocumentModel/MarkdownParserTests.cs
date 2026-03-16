@@ -16,8 +16,8 @@ public class MarkdownParserTests
     {
         var result = DM.MarkdownParser.Parse(string.Empty);
 
-        result.Should().BeOfType<Result<DM.MarkdownDocument, DM.MarkdownParseError>.Ok>();
-        var ok = (Result<DM.MarkdownDocument, DM.MarkdownParseError>.Ok)result;
+        result.Should().BeOfType<Result<DM.MarkdownDocument, MdqError>.Ok>();
+        var ok = (Result<DM.MarkdownDocument, MdqError>.Ok)result;
         ok.Value.Sections.Should().BeEmpty();
     }
 
@@ -26,8 +26,8 @@ public class MarkdownParserTests
     {
         var result = DM.MarkdownParser.Parse("   \n\n   ");
 
-        result.Should().BeOfType<Result<DM.MarkdownDocument, DM.MarkdownParseError>.Ok>();
-        var ok = (Result<DM.MarkdownDocument, DM.MarkdownParseError>.Ok)result;
+        result.Should().BeOfType<Result<DM.MarkdownDocument, MdqError>.Ok>();
+        var ok = (Result<DM.MarkdownDocument, MdqError>.Ok)result;
         ok.Value.Sections.Should().BeEmpty();
     }
 
@@ -347,7 +347,7 @@ public class MarkdownParserTests
     private static DM.MarkdownDocument ParseOk(string markdown)
     {
         var result = DM.MarkdownParser.Parse(markdown);
-        result.Should().BeOfType<Result<DM.MarkdownDocument, DM.MarkdownParseError>.Ok>();
-        return ((Result<DM.MarkdownDocument, DM.MarkdownParseError>.Ok)result).Value;
+        result.Should().BeOfType<Result<DM.MarkdownDocument, MdqError>.Ok>();
+        return ((Result<DM.MarkdownDocument, MdqError>.Ok)result).Value;
     }
 }
