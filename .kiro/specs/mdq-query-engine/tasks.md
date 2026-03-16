@@ -1,0 +1,218 @@
+# Implementation Plan: mdq Query Engine
+
+## Overview
+
+Incremental implementation of the mdq CLI tool, building from shared kernel types through each vertical slice (Markdown parsing, selector parsing, query execution) and wiring everything together in the CLI. Each task builds on the previous, with property-based and unit tests placed close to the code they validate.
+
+## Tasks
+
+- [x] 1. Set up solution structure and shared kernel
+  - [x] 1.1 Create solution and project scaffolding
+    - Create `Mdq.sln` with three projects: `Mdq.Core` (class library), `Mdq.Cli` (console app), `Mdq.Tests` (NUnit test project)
+    - Add NuGet references: NUnit, NUnit3TestAdapter, AwesomeAssertions, FsCheck, FsCheck.NUnit to `Mdq.Tests`
+    - Add project references: `Mdq.Tests` references `Mdq.Core` and `Mdq.Cli`; `Mdq.Cli` references `Mdq.Core`
+    - Create directory structure under `Mdq.Core`: `Shared/`, `DocumentModel/`, `SelectorModel/`, `QueryEngine/`
+    - _Requirements: all (foundational)_
+  - [x] 1.2 Implement Result type and MdqError base
+    - Create `Mdq.Core/Shared/Result.cs` with the sealed record hierarchy (`Ok`, `Err`), `Map`, and `Bind` methods
+    - Create `Mdq.Core/Shared/MdqError.cs` with the abstract base record
+    - _Requirements: all (cross-cutting error handling)_
+
+- [x] 2. Implement Document Model and Markdown Parser
+  - [x] 2.1 Create Document Model types
+    - Create `Mdq.Core/DocumentModel/Paragraph.cs` with the discriminated union: `TextBlock`, `ListBlock`, `BlockQuote`
+    - Create `Mdq.Core/DocumentModel/ListItem.cs` with `Content` and optional `SubList`
+    - Create `Mdq.Core/DocumentModel/Section.cs` with `HeadingText`, `HeadingLevel`, `Paragraphs`, `Children`
+    - Create `Mdq.Core/DocumentModel/MarkdownDocument.cs` with `IReadOnlyList<Section> Sections`
+    - Create `Mdq.Core/DocumentModel/MarkdownParseError.cs`
+    - Create `ListKind` enum (Bulleted, Numbered)
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
+  - [x] 2.2 Add Markdig dependency and implement MarkdownParser
+    - Add `Markdig` NuGet package to `Mdq.Core`
+    - Create `Mdq.Core/DocumentModel/MarkdownParser.cs` as a static class with `Parse(string markdown)` returning `Result<MarkdownDocument, MarkdownParseError>`
+    - Use `Markdig.Markdown.Parse(markdown)` to obtain the Markdig `MarkdownDocument` AST
+    - Walk the top-level block list: map `HeadingBlock` to section boundaries (using `HeadingBlock.Level`), `ParagraphBlock` to `TextBlock`, `ListBlock`/`ListItemBlock` to `Paragraph.ListBlock`/`ListItem` (including nested sub-lists via recursive descent), `QuoteBlock` to `BlockQuote`
+    - Store content before the first heading as a root-level `Section` with `HeadingText = null`, `HeadingLevel = 0`
+    - Build the section tree by nesting sections under their parent heading level
+    - Return an empty `MarkdownDocument` (no sections) for empty input
+    - Extract helper methods for each block type mapping and for tree building; avoid nested control structures
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
+  - [x] 2.3 Write unit tests for MarkdownParser
+    - Create `Mdq.Tests/DocumentModel/MarkdownParserTests.cs`
+    - Test empty document produces empty model (Req 1.7)
+    - Test content before first heading stored as preamble section (Req 1.2)
+    - Test heading hierarchy builds correct section tree (Req 1.1)
+    - Test blank-line-separated text blocks become distinct paragraphs (Req 1.3)
+    - Test bulleted and numbered lists parsed as single ListBlock with correct items (Req 1.4)
+    - Test nested sub-lists populate ListItem.SubList (Req 1.5)
+    - Test block quotes parsed as BlockQuote paragraphs (Req 1.6)
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
+  - [ ]* 2.4 Write property test: Section tree heading-level invariant
+    - Create `Mdq.Tests/DocumentModel/MarkdownParserPropertyTests.cs`
+    - Define FsCheck `Arbitrary` for generating valid Markdown strings with random heading structures
+    - **Property 1: Section tree heading-level invariant** -- every child Section's HeadingLevel is exactly one greater than its parent's, and preamble has HeadingLevel 0 with null HeadingText
+    - **Validates: Requirements 1.1, 1.2**
+  - [ ]* 2.5 Write property test: Paragraph splitting by blank lines
+    - **Property 2: Paragraph splitting by blank lines** -- for N text blocks separated by blank lines, the parsed Section contains exactly N Paragraph entries
+    - Add to `MarkdownParserPropertyTests.cs`
+    - **Validates: Requirements 1.3**
+  - [ ]* 2.6 Write property test: List and block-quote structure
+    - **Property 3: List and block-quote structure** -- lists produce a single ListBlock with correct ListItems, nested sub-lists produce non-null SubList, block quotes produce BlockQuote
+    - Add to `MarkdownParserPropertyTests.cs`
+    - **Validates: Requirements 1.4, 1.5, 1.6**
+
+- [x] 3. Checkpoint - Markdown Parser
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 4. Implement Selector Model and Selector Parser
+  - [x] 4.1 Create Selector Model types
+    - Create `Mdq.Core/SelectorModel/SelectorSegment.cs` with the sealed record hierarchy: `Heading`, `Text`, `HeadingContent`, `ParagraphAt`, `ItemAt`
+    - Create `Mdq.Core/SelectorModel/SelectorChain.cs` with `IReadOnlyList<SelectorSegment> Segments` and `IsEmpty` property
+    - Create `Mdq.Core/SelectorModel/SelectorParseError.cs` with `Message` and `Position`
+    - _Requirements: 2.1, 2.2, 2.4, 2.5, 2.6, 2.7_
+  - [x] 4.2 Implement SelectorParser
+    - Create `Mdq.Core/SelectorModel/SelectorParser.cs` as a static class with `Parse(string selector)` returning `Result<SelectorChain, SelectorParseError>`
+    - Implement character-by-character scanning following the grammar: `#Name` for headings, `.text`, `.heading`, `.paragraph(N)`, `.item(N)`
+    - Return empty `SelectorChain` for empty input string
+    - Return `SelectorParseError` with position for invalid syntax, non-positive integers, and non-integer arguments
+    - Handle chained heading selectors (`#A#B`) and chained `.item(N)` selectors
+    - Avoid nested control structures; use helper methods for each segment type
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 2.10_
+  - [x] 4.3 Implement SelectorChain.ToString for round-trip support
+    - Add a `ToString()` override on `SelectorChain` that renders the chain back to its string form
+    - Add `ToString()` on each `SelectorSegment` subtype (`#Name`, `.text`, `.heading`, `.paragraph(N)`, `.item(N)`)
+    - _Requirements: 2.2, 2.4, 2.5, 2.6, 2.7 (needed for Property 4 round-trip testing)_
+  - [x] 4.4 Write unit tests for SelectorParser
+    - Create `Mdq.Tests/SelectorModel/SelectorParserTests.cs`
+    - Test empty string produces empty SelectorChain (Req 2.1)
+    - Test single heading selector `#Name` (Req 2.2)
+    - Test chained heading selectors `#A#B` (Req 2.3)
+    - Test `.text`, `.heading`, `.paragraph(N)`, `.item(N)` selectors (Req 2.4, 2.5, 2.6, 2.7)
+    - Test chained `.item(N)` selectors (Req 2.8)
+    - Test invalid syntax returns error with position (Req 2.9)
+    - Test non-positive and non-integer arguments return error (Req 2.10)
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 2.10_
+  - [ ]* 4.5 Write property test: Selector parse round-trip
+    - Create `Mdq.Tests/SelectorModel/SelectorParserPropertyTests.cs`
+    - Define FsCheck `Arbitrary` for generating valid `SelectorChain` instances with random segments
+    - **Property 4: Selector parse round-trip** -- converting a SelectorChain to string and parsing back produces a structurally equal chain
+    - **Validates: Requirements 2.2, 2.4, 2.5, 2.6, 2.7, 2.8**
+  - [ ]* 4.6 Write property test: Invalid selector produces positioned error
+    - **Property 5: Invalid selector produces positioned error** -- any string violating the grammar returns Err with SelectorParseError whose Position is within input bounds
+    - Define FsCheck `Arbitrary` for generating invalid selector strings
+    - Add to `SelectorParserPropertyTests.cs`
+    - **Validates: Requirements 2.9, 2.10**
+
+- [x] 5. Checkpoint - Selector Parser
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 6. Implement Query Engine
+  - [x] 6.1 Create QueryError types
+    - Create `Mdq.Core/QueryEngine/QueryError.cs` with the sealed record hierarchy: `HeadingNotFound`, `ParagraphOutOfRange`, `ItemOutOfRange`, `NotAList`
+    - Each subtype includes contextual fields (name/level, requested/actual counts) as specified in the design
+    - _Requirements: 3.9, 3.10, 3.11, 3.12_
+  - [x] 6.2 Implement QueryExecutor
+    - Create `Mdq.Core/QueryEngine/QueryExecutor.cs` as a static class with `Execute(MarkdownDocument document, SelectorChain chain)` returning `Result<string, QueryError>`
+    - Implement segment-by-segment traversal of the SelectorChain, narrowing matched content at each step
+    - Return full document content for empty SelectorChain
+    - Implement heading resolution: match Section by heading text at the expected level, return heading line + body + nested subsections
+    - Implement chained heading resolution: each successive `#Name` searches one level deeper
+    - Implement `.text` resolution: return body content excluding heading line
+    - Implement `.heading` resolution: return heading text without `#` prefix characters
+    - Implement `.paragraph(N)` resolution: return Nth paragraph (1-indexed) from current section
+    - Implement `.item(N)` resolution: return Nth ListItem from current ListBlock; support chained `.item()` for nested sub-lists
+    - Return appropriate `QueryError` subtypes for all failure cases (heading not found, out-of-range, not-a-list)
+    - Extract dedicated helper methods for each segment type to keep logic flat
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 3.10, 3.11, 3.12_
+  - [x] 6.3 Write unit tests for QueryExecutor
+    - Create `Mdq.Tests/QueryEngine/QueryExecutorTests.cs`
+    - Test empty chain returns full document content (Req 3.1)
+    - Test single heading selector returns correct section with body and subsections (Req 3.2)
+    - Test chained heading selectors `#A#B` navigate into nested sections (Req 3.3)
+    - Test `.text` returns body without heading line (Req 3.4)
+    - Test `.heading` returns heading text without `#` prefix (Req 3.5)
+    - Test `.paragraph(N)` returns correct paragraph (Req 3.6)
+    - Test `.item(N)` returns correct list item (Req 3.7)
+    - Test chained `.item(N)` navigates nested sub-lists (Req 3.8)
+    - Test heading not found returns HeadingNotFound error (Req 3.9)
+    - Test paragraph out of range returns ParagraphOutOfRange error (Req 3.10)
+    - Test item out of range returns ItemOutOfRange error (Req 3.11)
+    - Test `.item(N)` on non-list returns NotAList error (Req 3.12)
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 3.10, 3.11, 3.12_
+  - [ ]* 6.4 Write property test: Empty selector returns full document
+    - Create `Mdq.Tests/QueryEngine/QueryExecutorPropertyTests.cs`
+    - Define FsCheck `Arbitrary` for generating valid `MarkdownDocument` instances with random sections, paragraphs, lists, and nesting
+    - **Property 6: Empty selector returns full document** -- executing an empty SelectorChain returns the full rendered content
+    - **Validates: Requirements 3.1**
+  - [ ]* 6.5 Write property test: Heading selector returns correct section
+    - **Property 7: Heading selector returns correct section** -- for any document containing a section with heading H at level L, navigating to it returns heading line + body + nested subsections
+    - Add to `QueryExecutorPropertyTests.cs`
+    - **Validates: Requirements 3.2, 3.3**
+  - [ ]* 6.6 Write property test: .text and .heading are complementary views
+    - **Property 8: .text and .heading are complementary views** -- heading text (without `#` prefix) concatenated with `.text` result equals full section content
+    - Add to `QueryExecutorPropertyTests.cs`
+    - **Validates: Requirements 3.4, 3.5**
+  - [ ]* 6.7 Write property test: .paragraph(N) returns the Nth paragraph
+    - **Property 9: .paragraph(N) returns the Nth paragraph** -- for any Section with K paragraphs and N in [1, K], .paragraph(N) returns the Nth paragraph in document order
+    - Add to `QueryExecutorPropertyTests.cs`
+    - **Validates: Requirements 3.6**
+  - [ ]* 6.8 Write property test: .item(N) navigates lists and nested sub-lists
+    - **Property 10: .item(N) navigates lists and nested sub-lists** -- for any ListBlock with K items and N in [1, K], .item(N) returns the Nth ListItem; chained .item() navigates deeper
+    - Add to `QueryExecutorPropertyTests.cs`
+    - **Validates: Requirements 3.7, 3.8**
+  - [ ]* 6.9 Write property test: Out-of-range paragraph index returns ParagraphOutOfRange
+    - **Property 11: Out-of-range paragraph index returns ParagraphOutOfRange** -- for any Section with K paragraphs and N > K, .paragraph(N) returns ParagraphOutOfRange with requested N and actual K
+    - Add to `QueryExecutorPropertyTests.cs`
+    - **Validates: Requirements 3.10**
+  - [ ]* 6.10 Write property test: Out-of-range item index returns ItemOutOfRange
+    - **Property 12: Out-of-range item index returns ItemOutOfRange** -- for any ListBlock with K items and N > K, .item(N) returns ItemOutOfRange with requested N and actual K
+    - Add to `QueryExecutorPropertyTests.cs`
+    - **Validates: Requirements 3.11**
+  - [ ]* 6.11 Write property test: .item on non-list returns NotAList
+    - **Property 13: .item on non-list returns NotAList** -- for any Paragraph that is not a ListBlock, .item(N) returns NotAList error
+    - Add to `QueryExecutorPropertyTests.cs`
+    - **Validates: Requirements 3.12**
+  - [ ]* 6.12 Write property test: Heading not found returns HeadingNotFound
+    - **Property 14: Heading not found returns HeadingNotFound** -- for any MarkdownDocument and heading name not present at the expected level, returns HeadingNotFound with name and level
+    - Add to `QueryExecutorPropertyTests.cs`
+    - **Validates: Requirements 3.9**
+
+- [x] 7. Checkpoint - Query Engine
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 8. Implement CLI and wire pipeline
+  - [x] 8.1 Implement CLI entry point
+    - Create `Mdq.Cli/Program.cs` as the composition root
+    - Validate command-line arguments: require exactly two positional args (file path, selector string)
+    - Write usage summary to stderr and exit with non-zero code when no arguments provided
+    - Read file from disk; write descriptive error to stderr and exit non-zero if file not found or unreadable
+    - Call `MarkdownParser.Parse` on file content
+    - Call `SelectorParser.Parse` on selector argument; write SelectorParseError to stderr and exit non-zero on failure
+    - Call `QueryExecutor.Execute` with parsed model and chain; write QueryError to stderr and exit non-zero on failure
+    - Write matched content to stdout and exit with code 0 on success
+    - Pattern-match on each `Result` to decide output stream and exit code; no exceptions for control flow
+    - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6_
+  - [ ]* 8.2 Write CLI integration tests
+    - Create `Mdq.Tests/Cli/CliIntegrationTests.cs`
+    - Test successful query writes matched content to stdout with exit code 0 (Req 4.2)
+    - Test missing file writes error to stderr with non-zero exit code (Req 4.3)
+    - Test invalid selector writes parser error to stderr with non-zero exit code (Req 4.4)
+    - Test non-matching query writes error to stderr with non-zero exit code (Req 4.5)
+    - Test no arguments writes usage summary to stderr with non-zero exit code (Req 4.6)
+    - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6_
+  - [ ]* 8.3 Write property test: CLI pipeline success
+    - Add to `Mdq.Tests/Cli/CliIntegrationTests.cs` or create dedicated property test file
+    - **Property 15: CLI pipeline success** -- for any valid Markdown file on disk and any query selector that matches content, the CLI writes matched content to stdout and exits with code 0
+    - **Validates: Requirements 4.2**
+
+- [x] 9. Final checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+## Notes
+
+- Tasks marked with `*` are optional and can be skipped for faster MVP.
+- Each task references specific requirements for traceability.
+- Checkpoints ensure incremental validation after each vertical slice.
+- Property tests validate universal correctness properties from the design document.
+- Unit tests validate specific examples and edge cases.
+- FsCheck Arbitrary instances for MarkdownDocument and SelectorChain are shared across property test classes; consider placing them in a shared `Mdq.Tests/Generators/` directory.
