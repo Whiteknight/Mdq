@@ -69,18 +69,11 @@ public static class SelectorParser
     {
         // pos points at '#'
         int nameStart = pos + 1;
-
-        if (nameStart >= input.Length || input[nameStart] == '#' || input[nameStart] == '.')
-            return new SelectorParseError($"Expected heading name after '#' at position {pos}.", pos);
-
         int nameEnd = nameStart;
         while (nameEnd < input.Length && input[nameEnd] != '#' && input[nameEnd] != '.')
             nameEnd++;
 
         var name = input[nameStart..nameEnd].Trim();
-        if (name.Length == 0)
-            return new SelectorParseError($"Heading name at position {nameStart} is empty or whitespace.", nameStart);
-
         return (new SelectorSegment.Heading(name), nameEnd);
     }
 

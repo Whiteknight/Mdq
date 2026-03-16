@@ -24,7 +24,7 @@ public class SelectorParserTests
     {
         var result = SM.SelectorParser.Parse(selector);
         result.Should().BeOfType<Result<SM.SelectorChain, MdqError>.Err>();
-        return ((Result<SM.SelectorChain, MdqError>.Err)result).Error as SelectorParseError;
+        return (((Result<SM.SelectorChain, MdqError>.Err)result).Error as SelectorParseError)!;
     }
 
     // -------------------------------------------------------------------------
@@ -71,6 +71,16 @@ public class SelectorParserTests
             .Which.Name.Should().Be("Introduction");
     }
 
+    [Test]
+    public void Parse_HashWithNoName()
+    {
+        var chain = ParseOk("#");
+
+        chain.Segments.Should().HaveCount(1);
+        chain.Segments[0].Should().BeOfType<SM.SelectorSegment.Heading>()
+            .Which.Name.Should().Be("");
+    }
+
     // -------------------------------------------------------------------------
     // Req 2.3 -- chained heading selectors
     // -------------------------------------------------------------------------
@@ -96,6 +106,29 @@ public class SelectorParserTests
         chain.Segments[0].Should().BeOfType<SM.SelectorSegment.Heading>().Which.Name.Should().Be("A");
         chain.Segments[1].Should().BeOfType<SM.SelectorSegment.Heading>().Which.Name.Should().Be("B");
         chain.Segments[2].Should().BeOfType<SM.SelectorSegment.Heading>().Which.Name.Should().Be("C");
+    }
+
+    [Test]
+    public void Parse_HashFollowedImmediatelyByHash()
+    {
+        var chain = ParseOk("##Section");
+
+        chain.Segments.Should().HaveCount(2);
+        chain.Segments[0].Should().BeOfType<SM.SelectorSegment.Heading>()
+            .Which.Name.Should().Be("");
+        chain.Segments[1].Should().BeOfType<SM.SelectorSegment.Heading>()
+            .Which.Name.Should().Be("Section");
+    }
+
+    [Test]
+    public void Parse_HashFollowedImmediatelyByDot()
+    {
+        var chain = ParseOk("#.text");
+
+        chain.Segments.Should().HaveCount(2);
+        chain.Segments[0].Should().BeOfType<SM.SelectorSegment.Heading>()
+            .Which.Name.Should().Be("");
+        chain.Segments[1].Should().BeOfType<SM.SelectorSegment.Text>();
     }
 
     // -------------------------------------------------------------------------
@@ -197,30 +230,6 @@ public class SelectorParserTests
 
         error.Position.Should().Be(0);
         error.Message.Should().Contain(".foo");
-    }
-
-    [Test]
-    public void Parse_HashWithNoName_ReturnsError()
-    {
-        var error = ParseErr("#");
-
-        error.Position.Should().Be(0);
-    }
-
-    [Test]
-    public void Parse_HashFollowedImmediatelyByHash_ReturnsError()
-    {
-        var error = ParseErr("##Section");
-
-        error.Position.Should().Be(0);
-    }
-
-    [Test]
-    public void Parse_HashFollowedImmediatelyByDot_ReturnsError()
-    {
-        var error = ParseErr("#.text");
-
-        error.Position.Should().Be(0);
     }
 
     [Test]

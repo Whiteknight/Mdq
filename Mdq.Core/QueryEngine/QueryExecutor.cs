@@ -68,8 +68,7 @@ public static class QueryExecutor
         int segmentIndex,
         SelectorSegment.Heading headingSeg)
     {
-        var matched = sections.FirstOrDefault(s =>
-            string.Equals(s.HeadingText, headingSeg.Name, StringComparison.Ordinal));
+        var matched = sections.FirstOrDefault(s => IsHeadingMatch(s.HeadingText ?? string.Empty, headingSeg.Name));
 
         if (matched is null)
             return new QueryError.HeadingNotFound(headingSeg.Name, currentLevel);
@@ -87,6 +86,16 @@ public static class QueryExecutor
         return ExecuteSectionSegment(matched, segments, nextIndex);
     }
 
+    private static bool IsHeadingMatch(string sectionHeading, string targetHeading)
+    {
+        if (string.IsNullOrEmpty(targetHeading))
+            return true;
+
+        // TODO: Wildcard matching with '*'
+
+        return string.Equals(sectionHeading, targetHeading, StringComparison.Ordinal);
+    }
+
     /// <summary>
     /// Dispatches a non-heading segment against a resolved <see cref="Section"/>.
     /// </summary>
@@ -95,9 +104,7 @@ public static class QueryExecutor
         IReadOnlyList<SelectorSegment> segments,
         int segmentIndex)
     {
-        var segment = segments[segmentIndex];
-
-        return segment switch
+        return segments[segmentIndex] switch
         {
             SelectorSegment.Text => ResolveText(section),
             SelectorSegment.HeadingContent => ResolveHeadingContent(section),
