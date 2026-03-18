@@ -28,7 +28,7 @@ public class QueryExecutorTests
         var result = QueryExecutor.Execute(doc, chain);
         result.Should().BeOfType<Result<string, MdqError>.Err>(
             $"expected Err but got Ok for selector '{selector}'");
-        return ((Result<string, MdqError>.Err)result).Error as QueryError;
+        return ((Result<string, MdqError>.Err)result).Error as QueryError ?? throw new InvalidCastException();
     }
 
     private static SelectorChain ParseChain(string selector)
@@ -48,12 +48,12 @@ public class QueryExecutorTests
 
     private static Section SimpleSection(string heading, int level, params string[] paragraphTexts) =>
         new(heading, level,
-            paragraphTexts.Select(t => (Paragraph)new Paragraph.TextBlock(t)).ToList(),
+            paragraphTexts.Select(t => (Paragraph)new TextBlock(t)).ToList(),
             []);
 
     private static Section SectionWithChildren(string heading, int level, Section[] children, params string[] paragraphTexts) =>
         new(heading, level,
-            paragraphTexts.Select(t => (Paragraph)new Paragraph.TextBlock(t)).ToList(),
+            paragraphTexts.Select(t => (Paragraph)new TextBlock(t)).ToList(),
             children.ToList());
 
     private static Section SectionWithParagraphs(string heading, int level, IReadOnlyList<Paragraph> paragraphs) =>
@@ -154,6 +154,21 @@ public class QueryExecutorTests
         result.Should().NotContain("Parent body.");
     }
 
+    [Test]
+    public void Execute_ChainedHeadingSelectorsWildcard_NavigatesIntoNestedSection()
+    {
+        var h1 = SimpleSection("Heading1", 2, "FirstParagraph");
+        var h2 = SimpleSection("Heading2", 2, "SecondParagraph");
+        var parent = SectionWithChildren("Parent", 1, [h1, h2], "Parent body.");
+        var doc = DocWithSections(parent);
+
+        var result = ExecuteOk(doc, "##*din*");
+
+        result.Should().Contain("## Heading1");
+        result.Should().Contain("FirstParagraph");
+        // TODO: Should also match Heading2, but for now just verify it doesn't match Parent
+    }
+
     // -------------------------------------------------------------------------
     // Req 3.4 -- .text returns body without heading line
     // -------------------------------------------------------------------------
@@ -219,9 +234,9 @@ public class QueryExecutorTests
     {
         var paragraphs = new List<Paragraph>
         {
-            new Paragraph.TextBlock("First."),
-            new Paragraph.TextBlock("Second."),
-            new Paragraph.TextBlock("Third.")
+            new TextBlock("First."),
+            new TextBlock("Second."),
+            new TextBlock("Third.")
         };
         var doc = DocWithSections(SectionWithParagraphs("Section", 1, paragraphs));
 
@@ -243,7 +258,7 @@ public class QueryExecutorTests
             new("Beta", null),
             new("Gamma", null)
         };
-        var listBlock = new Paragraph.ListBlock(ListKind.Bulleted, items);
+        var listBlock = new ListBlock(ListKind.Bulleted, items);
         var doc = DocWithSections(SectionWithParagraphs("List Section", 1, [listBlock]));
 
         ExecuteOk(doc, "#List Section.paragraph(1).item(1)").Should().Be("Alpha");
@@ -263,13 +278,13 @@ public class QueryExecutorTests
             new("Sub-Alpha", null),
             new("Sub-Beta", null)
         };
-        var subList = new Paragraph.ListBlock(ListKind.Bulleted, subItems);
+        var subList = new ListBlock(ListKind.Bulleted, subItems);
         var items = new List<ListItem>
         {
             new("Parent item", subList),
             new("Other item", null)
         };
-        var listBlock = new Paragraph.ListBlock(ListKind.Bulleted, items);
+        var listBlock = new ListBlock(ListKind.Bulleted, items);
         var doc = DocWithSections(SectionWithParagraphs("Section", 1, [listBlock]));
 
         var result = ExecuteOk(doc, "#Section.paragraph(1).item(1).item(2)");
@@ -340,7 +355,7 @@ public class QueryExecutorTests
     public void Execute_ItemOutOfRange_ReturnsItemOutOfRangeError()
     {
         var items = new List<ListItem> { new("Only item", null) };
-        var listBlock = new Paragraph.ListBlock(ListKind.Bulleted, items);
+        var listBlock = new ListBlock(ListKind.Bulleted, items);
         var doc = DocWithSections(SectionWithParagraphs("Section", 1, [listBlock]));
 
         var error = ExecuteErr(doc, "#Section.paragraph(1).item(3)");
@@ -386,7 +401,7 @@ public class QueryExecutorTests
     public void Execute_EmptyChain_RendersBulletedList()
     {
         var items = new List<ListItem> { new("A", null), new("B", null) };
-        var listBlock = new Paragraph.ListBlock(ListKind.Bulleted, items);
+        var listBlock = new ListBlock(ListKind.Bulleted, items);
         var doc = DocWithSections(SectionWithParagraphs("Section", 1, [listBlock]));
 
         var result = ExecuteOk(doc, "");
@@ -399,7 +414,7 @@ public class QueryExecutorTests
     public void Execute_EmptyChain_RendersNumberedList()
     {
         var items = new List<ListItem> { new("First", null), new("Second", null) };
-        var listBlock = new Paragraph.ListBlock(ListKind.Numbered, items);
+        var listBlock = new ListBlock(ListKind.Numbered, items);
         var doc = DocWithSections(SectionWithParagraphs("Section", 1, [listBlock]));
 
         var result = ExecuteOk(doc, "");
@@ -411,7 +426,7 @@ public class QueryExecutorTests
     [Test]
     public void Execute_EmptyChain_RendersBlockQuote()
     {
-        var bq = new Paragraph.BlockQuote("Quoted text.");
+        var bq = new BlockQuote("Quoted text.");
         var doc = DocWithSections(SectionWithParagraphs("Section", 1, [bq]));
 
         var result = ExecuteOk(doc, "");

@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.RegularExpressions;
 using Mdq.Core.DocumentModel;
 using Mdq.Core.SelectorModel;
 using Mdq.Core.Shared;
@@ -91,9 +92,10 @@ public static class QueryExecutor
         if (string.IsNullOrEmpty(targetHeading))
             return true;
 
-        // TODO: Wildcard matching with '*'
-
-        return string.Equals(sectionHeading, targetHeading, StringComparison.Ordinal);
+        return new Regex(
+            "^" + Regex.Escape(targetHeading).Replace(@"\*", ".*").Replace(@"\?", ".") + "$",
+            RegexOptions.IgnoreCase | RegexOptions.Singleline
+        ).IsMatch(sectionHeading);
     }
 
     /// <summary>
@@ -174,7 +176,7 @@ public static class QueryExecutor
     {
         // When .item(N) is used without a preceding .paragraph(N), we look for
         // the first ListBlock paragraph in the section.
-        var listBlock = section.Paragraphs.OfType<Paragraph.ListBlock>().FirstOrDefault();
+        var listBlock = section.Paragraphs.OfType<ListBlock>().FirstOrDefault();
 
         if (listBlock is null)
         {
@@ -202,14 +204,14 @@ public static class QueryExecutor
         if (segment is not SelectorSegment.ItemAt itemSeg)
             return RenderParagraph(paragraph);
 
-        if (paragraph is not Paragraph.ListBlock listBlock)
+        if (paragraph is not ListBlock listBlock)
             return new QueryError.NotAList();
 
         return ResolveItemOnList(listBlock, segments, segmentIndex, itemSeg);
     }
 
     private static Result<string, QueryError> ResolveItemOnList(
-        Paragraph.ListBlock listBlock,
+        ListBlock listBlock,
         IReadOnlyList<SelectorSegment> segments,
         int segmentIndex,
         SelectorSegment.ItemAt itemSeg)
@@ -275,19 +277,19 @@ public static class QueryExecutor
     private static string RenderParagraph(Paragraph paragraph)
         => paragraph switch
         {
-            Paragraph.TextBlock tb => tb.Content,
-            Paragraph.BlockQuote bq => RenderBlockQuote(bq),
-            Paragraph.ListBlock lb => RenderListBlock(lb, indent: 0),
+            TextBlock tb => tb.Content,
+            BlockQuote bq => RenderBlockQuote(bq),
+            ListBlock lb => RenderListBlock(lb, indent: 0),
             _ => string.Empty
         };
 
-    private static string RenderBlockQuote(Paragraph.BlockQuote bq)
+    private static string RenderBlockQuote(BlockQuote bq)
     {
         var lines = bq.Content.Split('\n');
         return string.Join("\n", lines.Select(l => $"> {l}"));
     }
 
-    private static string RenderListBlock(Paragraph.ListBlock listBlock, int indent)
+    private static string RenderListBlock(ListBlock listBlock, int indent)
     {
         var sb = new StringBuilder();
         string prefix = new string(' ', indent * 2);

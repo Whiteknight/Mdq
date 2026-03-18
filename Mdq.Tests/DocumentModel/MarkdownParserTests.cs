@@ -51,7 +51,7 @@ public class MarkdownParserTests
         preamble.HeadingText.Should().BeNull();
         preamble.HeadingLevel.Should().Be(0);
         preamble.Paragraphs.Should().HaveCount(1);
-        preamble.Paragraphs[0].Should().BeOfType<DM.Paragraph.TextBlock>()
+        preamble.Paragraphs[0].Should().BeOfType<DM.TextBlock>()
             .Which.Content.Should().Be("Some introductory text.");
     }
 
@@ -201,9 +201,9 @@ public class MarkdownParserTests
         var section = model.Sections[0];
 
         section.Paragraphs.Should().HaveCount(2);
-        section.Paragraphs[0].Should().BeOfType<DM.Paragraph.TextBlock>()
+        section.Paragraphs[0].Should().BeOfType<DM.TextBlock>()
             .Which.Content.Should().Be("First block.");
-        section.Paragraphs[1].Should().BeOfType<DM.Paragraph.TextBlock>()
+        section.Paragraphs[1].Should().BeOfType<DM.TextBlock>()
             .Which.Content.Should().Be("Second block.");
     }
 
@@ -242,7 +242,7 @@ public class MarkdownParserTests
         var section = model.Sections[0];
 
         section.Paragraphs.Should().HaveCount(1);
-        var listBlock = section.Paragraphs[0].Should().BeOfType<DM.Paragraph.ListBlock>().Subject;
+        var listBlock = section.Paragraphs[0].Should().BeOfType<DM.ListBlock>().Subject;
         listBlock.Kind.Should().Be(DM.ListKind.Bulleted);
         listBlock.Items.Should().HaveCount(3);
         listBlock.Items[0].Content.Should().Be("Alpha");
@@ -261,7 +261,7 @@ public class MarkdownParserTests
             """;
 
         var model = ParseOk(markdown);
-        var listBlock = model.Sections[0].Paragraphs[0].Should().BeOfType<DM.Paragraph.ListBlock>().Subject;
+        var listBlock = model.Sections[0].Paragraphs[0].Should().BeOfType<DM.ListBlock>().Subject;
         listBlock.Kind.Should().Be(DM.ListKind.Numbered);
         listBlock.Items.Should().HaveCount(3);
         listBlock.Items[0].Content.Should().Be("First");
@@ -285,7 +285,7 @@ public class MarkdownParserTests
             """;
 
         var model = ParseOk(markdown);
-        var listBlock = model.Sections[0].Paragraphs[0].Should().BeOfType<DM.Paragraph.ListBlock>().Subject;
+        var listBlock = model.Sections[0].Paragraphs[0].Should().BeOfType<DM.ListBlock>().Subject;
 
         listBlock.Items.Should().HaveCount(2);
 
@@ -315,7 +315,7 @@ public class MarkdownParserTests
         var section = model.Sections[0];
 
         section.Paragraphs.Should().HaveCount(1);
-        section.Paragraphs[0].Should().BeOfType<DM.Paragraph.BlockQuote>()
+        section.Paragraphs[0].Should().BeOfType<DM.BlockQuote>()
             .Which.Content.Should().Be("This is a quote.");
     }
 
@@ -335,9 +335,9 @@ public class MarkdownParserTests
         var paragraphs = model.Sections[0].Paragraphs;
 
         paragraphs.Should().HaveCount(3);
-        paragraphs[0].Should().BeOfType<DM.Paragraph.TextBlock>();
-        paragraphs[1].Should().BeOfType<DM.Paragraph.BlockQuote>();
-        paragraphs[2].Should().BeOfType<DM.Paragraph.TextBlock>();
+        paragraphs[0].Should().BeOfType<DM.TextBlock>();
+        paragraphs[1].Should().BeOfType<DM.BlockQuote>();
+        paragraphs[2].Should().BeOfType<DM.TextBlock>();
     }
 
     // -------------------------------------------------------------------------

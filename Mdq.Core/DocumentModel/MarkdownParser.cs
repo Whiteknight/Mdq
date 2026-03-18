@@ -52,9 +52,9 @@ public static class MarkdownParser
     private static Paragraph? MapBlockToParagraph(Block block)
         => block switch
         {
-            ParagraphBlock p => new Paragraph.TextBlock(ExtractInlineText(p.Inline)),
-            ListBlock lb => MapListBlock(lb),
-            QuoteBlock qb => new Paragraph.BlockQuote(ExtractQuoteText(qb)),
+            ParagraphBlock p => new TextBlock(ExtractInlineText(p.Inline)),
+            Markdig.Syntax.ListBlock lb => MapListBlock(lb),
+            QuoteBlock qb => new BlockQuote(ExtractQuoteText(qb)),
             _ => null
         };
 
@@ -114,14 +114,14 @@ public static class MarkdownParser
     // List mapping
     // -------------------------------------------------------------------------
 
-    private static Paragraph.ListBlock MapListBlock(Markdig.Syntax.ListBlock lb)
+    private static ListBlock MapListBlock(Markdig.Syntax.ListBlock lb)
     {
         var kind = lb.IsOrdered ? ListKind.Numbered : ListKind.Bulleted;
         var items = lb
             .OfType<ListItemBlock>()
             .Select(MapListItem)
             .ToList();
-        return new Paragraph.ListBlock(kind, items);
+        return new ListBlock(kind, items);
     }
 
     private static ListItem MapListItem(ListItemBlock lib)
