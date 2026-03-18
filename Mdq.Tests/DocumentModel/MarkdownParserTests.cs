@@ -48,8 +48,8 @@ public class MarkdownParserTests
 
         model.Sections.Should().HaveCount(2);
         var preamble = model.Sections[0];
-        preamble.HeadingText.Should().BeNull();
-        preamble.HeadingLevel.Should().Be(0);
+        preamble.Heading.Text.Should().BeNull();
+        preamble.Heading.Level.Should().Be(0);
         preamble.Paragraphs.Should().HaveCount(1);
         preamble.Paragraphs[0].Should().BeOfType<DM.TextBlock>()
             .Which.Content.Should().Be("Some introductory text.");
@@ -66,7 +66,7 @@ public class MarkdownParserTests
         var model = ParseOk(markdown);
 
         model.Sections.Should().HaveCount(1);
-        model.Sections[0].HeadingText.Should().Be("First Heading");
+        model.Sections[0].Heading.Text.Should().Be("First Heading");
     }
 
     // -------------------------------------------------------------------------
@@ -85,8 +85,8 @@ public class MarkdownParserTests
 
         model.Sections.Should().HaveCount(1);
         var section = model.Sections[0];
-        section.HeadingText.Should().Be("Alpha");
-        section.HeadingLevel.Should().Be(1);
+        section.Heading.Text.Should().Be("Alpha");
+        section.Heading.Level.Should().Be(1);
         section.Children.Should().BeEmpty();
     }
 
@@ -105,13 +105,13 @@ public class MarkdownParserTests
 
         model.Sections.Should().HaveCount(1);
         var parent = model.Sections[0];
-        parent.HeadingText.Should().Be("Parent");
-        parent.HeadingLevel.Should().Be(1);
+        parent.Heading.Text.Should().Be("Parent");
+        parent.Heading.Level.Should().Be(1);
         parent.Children.Should().HaveCount(1);
 
         var child = parent.Children[0];
-        child.HeadingText.Should().Be("Child");
-        child.HeadingLevel.Should().Be(2);
+        child.Heading.Text.Should().Be("Child");
+        child.Heading.Level.Should().Be(2);
         child.Children.Should().BeEmpty();
     }
 
@@ -129,8 +129,8 @@ public class MarkdownParserTests
         var model = ParseOk(markdown);
 
         model.Sections.Should().HaveCount(2);
-        model.Sections[0].HeadingText.Should().Be("Alpha");
-        model.Sections[1].HeadingText.Should().Be("Beta");
+        model.Sections[0].Heading.Text.Should().Be("Alpha");
+        model.Sections[1].Heading.Text.Should().Be("Beta");
     }
 
     [Test]
@@ -152,8 +152,8 @@ public class MarkdownParserTests
         model.Sections.Should().HaveCount(1);
         var root = model.Sections[0];
         root.Children.Should().HaveCount(2);
-        root.Children[0].HeadingText.Should().Be("Child A");
-        root.Children[1].HeadingText.Should().Be("Child B");
+        root.Children[0].Heading.Text.Should().Be("Child A");
+        root.Children[1].Heading.Text.Should().Be("Child B");
     }
 
     [Test]
@@ -170,15 +170,15 @@ public class MarkdownParserTests
 
         model.Sections.Should().HaveCount(1);
         var h1 = model.Sections[0];
-        h1.HeadingLevel.Should().Be(1);
+        h1.Heading.Level.Should().Be(1);
         h1.Children.Should().HaveCount(1);
 
         var h2 = h1.Children[0];
-        h2.HeadingLevel.Should().Be(2);
+        h2.Heading.Level.Should().Be(2);
         h2.Children.Should().HaveCount(1);
 
         var h3 = h2.Children[0];
-        h3.HeadingLevel.Should().Be(3);
+        h3.Heading.Level.Should().Be(3);
         h3.Children.Should().BeEmpty();
     }
 

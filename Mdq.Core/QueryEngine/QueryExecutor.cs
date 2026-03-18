@@ -1,5 +1,4 @@
 using System.Text;
-using System.Text.RegularExpressions;
 using Mdq.Core.DocumentModel;
 using Mdq.Core.SelectorModel;
 using Mdq.Core.Shared;
@@ -57,7 +56,7 @@ public static class QueryExecutor
         // (Practically this only occurs when the chain starts with a content selector.)
         var combinedParagraphs = sections.SelectMany(s => s.Paragraphs).ToList();
         return ExecuteSectionSegment(
-            new Section(null, 0, combinedParagraphs, []),
+            new Section(Heading.Empty, combinedParagraphs, []),
             segments,
             segmentIndex);
     }
@@ -69,7 +68,7 @@ public static class QueryExecutor
         int segmentIndex,
         SelectorSegment.Heading headingSeg)
     {
-        var matched = sections.FirstOrDefault(s => IsHeadingMatch(s.HeadingText ?? string.Empty, headingSeg.Name));
+        var matched = sections.FirstOrDefault(s => s.Heading.IsMatch(headingSeg.Name));
 
         if (matched is null)
             return new QueryError.HeadingNotFound(headingSeg.Name, currentLevel);
@@ -87,17 +86,6 @@ public static class QueryExecutor
         return ExecuteSectionSegment(matched, segments, nextIndex);
     }
 
-    private static bool IsHeadingMatch(string sectionHeading, string targetHeading)
-    {
-        if (string.IsNullOrEmpty(targetHeading))
-            return true;
-
-        return new Regex(
-            "^" + Regex.Escape(targetHeading).Replace(@"\*", ".*").Replace(@"\?", ".") + "$",
-            RegexOptions.IgnoreCase | RegexOptions.Singleline
-        ).IsMatch(sectionHeading);
-    }
-
     /// <summary>
     /// Dispatches a non-heading segment against a resolved <see cref="Section"/>.
     /// </summary>
@@ -112,7 +100,7 @@ public static class QueryExecutor
             SelectorSegment.HeadingContent => ResolveHeadingContent(section),
             SelectorSegment.ParagraphAt p => ResolveParagraph(section, segments, segmentIndex, p),
             SelectorSegment.ItemAt item => ResolveItemOnSection(section, segments, segmentIndex, item),
-            SelectorSegment.Heading h => new QueryError.HeadingNotFound(h.Name, section.HeadingLevel + 1),
+            SelectorSegment.Heading h => new QueryError.HeadingNotFound(h.Name, section.Heading.Level + 1),
             _ => new QueryError.HeadingNotFound("(unknown)", 0)
         };
     }
@@ -139,7 +127,7 @@ public static class QueryExecutor
     // -------------------------------------------------------------------------
 
     private static Result<string, QueryError> ResolveHeadingContent(Section section)
-        => section.HeadingText ?? string.Empty;
+        => section.Heading.Text ?? string.Empty;
 
     // -------------------------------------------------------------------------
     // .paragraph(N)
@@ -262,8 +250,8 @@ public static class QueryExecutor
     {
         var parts = new List<string>();
 
-        if (section.HeadingText is not null)
-            parts.Add($"{new string('#', section.HeadingLevel)} {section.HeadingText}");
+        if (section.Heading.Text is not null)
+            parts.Add($"{new string('#', section.Heading.Level)} {section.Heading.Text}");
 
         foreach (var para in section.Paragraphs)
             parts.Add(RenderParagraph(para));

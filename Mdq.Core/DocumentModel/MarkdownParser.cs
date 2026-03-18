@@ -108,7 +108,7 @@ public static class MarkdownParser
     }
 
     private static Section ToSection(FlatSection flat, List<Section> children)
-        => new(flat.HeadingText, flat.HeadingLevel, flat.Paragraphs, children);
+        => new Section(new Heading(flat.HeadingText, flat.HeadingLevel), flat.Paragraphs, children);
 
     // -------------------------------------------------------------------------
     // List mapping

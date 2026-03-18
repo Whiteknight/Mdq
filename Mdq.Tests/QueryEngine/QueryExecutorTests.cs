@@ -47,17 +47,17 @@ public class QueryExecutorTests
         new(sections.ToList());
 
     private static Section SimpleSection(string heading, int level, params string[] paragraphTexts) =>
-        new(heading, level,
+        new(new Heading(heading, level),
             paragraphTexts.Select(t => (Paragraph)new TextBlock(t)).ToList(),
             []);
 
     private static Section SectionWithChildren(string heading, int level, Section[] children, params string[] paragraphTexts) =>
-        new(heading, level,
+        new(new Heading(heading, level),
             paragraphTexts.Select(t => (Paragraph)new TextBlock(t)).ToList(),
             children.ToList());
 
     private static Section SectionWithParagraphs(string heading, int level, IReadOnlyList<Paragraph> paragraphs) =>
-        new(heading, level, paragraphs, []);
+        new(new Heading(heading, level), paragraphs, []);
 
     // -------------------------------------------------------------------------
     // Req 3.1 -- empty chain returns full document content
@@ -338,7 +338,7 @@ public class QueryExecutorTests
     [Test]
     public void Execute_ParagraphOutOfRange_EmptySection_ReportsZeroActual()
     {
-        var doc = DocWithSections(new Section("Empty", 1, [], []));
+        var doc = DocWithSections(new Section(new Heading("Empty", 1), [], []));
 
         var error = ExecuteErr(doc, "#Empty.paragraph(1)");
 

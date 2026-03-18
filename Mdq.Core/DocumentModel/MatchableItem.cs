@@ -1,12 +1,43 @@
+using System.Text.RegularExpressions;
+
 namespace Mdq.Core.DocumentModel;
 
 public abstract record MatchableItem;
 
+public record Heading(string? Text, int Level) : MatchableItem
+{
+    public static Heading Empty => new(null, 0);
+
+    public bool IsMatch(string sectionHeading)
+    {
+        if (string.IsNullOrEmpty(sectionHeading))
+            return true;
+
+        var regexString = "^" + Regex.Escape(sectionHeading ?? string.Empty).Replace(@"\*", ".*").Replace(@"\?", ".") + "$";
+
+        return new Regex(regexString, RegexOptions.IgnoreCase | RegexOptions.Singleline)
+            .IsMatch(Text ?? string.Empty);
+    }
+}
+
 public record Section(
-    string? HeadingText,
-    int HeadingLevel,
-    IReadOnlyList<Paragraph> Paragraphs,
-    IReadOnlyList<Section> Children) : MatchableItem;
+   Heading Heading,
+   IReadOnlyList<Paragraph> Paragraphs,
+   IReadOnlyList<Section> Children) : MatchableItem
+{
+    public string ToBodyString()
+    {
+        var parts = new List<string>();
+
+        foreach (var para in Paragraphs)
+            parts.Add(para.ToString());
+
+        foreach (var child in Children)
+            parts.Add(child.ToString());
+
+        return string.Join("\n\n", parts);
+    }
+}
 
 public enum ListKind
 {
