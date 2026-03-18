@@ -4,6 +4,9 @@ namespace Mdq.Core.DocumentModel;
 
 public abstract record MatchableItem;
 
+// TODO: A document can contain paragraphs ahead of any section.
+public record MarkdownDocument(IReadOnlyList<Section> Sections) : MatchableItem;
+
 public record Heading(string? Text, int Level) : MatchableItem
 {
     public static Heading Empty => new(null, 0);
@@ -55,4 +58,6 @@ public sealed record BlockQuote(string Content) : Paragraph;
 
 public record ListItem(
     string Content,
+    ListKind Kind,
+    int Index,
     ListBlock? SubList) : MatchableItem;

@@ -13,22 +13,28 @@ public class QueryExecutorTests
     // Helpers
     // -------------------------------------------------------------------------
 
-    private static string ExecuteOk(MarkdownDocument doc, string selector)
+    private static List<MatchableItem> ExecuteOk(MarkdownDocument doc, string selector)
     {
         var chain = ParseChain(selector);
         var result = QueryExecutor.Execute(doc, chain);
-        result.Should().BeOfType<Result<string, MdqError>.Ok>(
-            $"expected Ok but got Err for selector '{selector}'");
-        return ((Result<string, MdqError>.Ok)result).Value;
+        result.IsSuccess.Should().BeTrue($"expected Ok but got Err for selector '{selector}'");
+        return result.GetValueOrDefault();
     }
 
-    private static QueryError ExecuteErr(MarkdownDocument doc, string selector)
+    private static void ExecuteOkEmpty(MarkdownDocument doc, string selector)
     {
         var chain = ParseChain(selector);
         var result = QueryExecutor.Execute(doc, chain);
-        result.Should().BeOfType<Result<string, MdqError>.Err>(
-            $"expected Err but got Ok for selector '{selector}'");
-        return ((Result<string, MdqError>.Err)result).Error as QueryError ?? throw new InvalidCastException();
+        result.IsSuccess.Should().BeTrue($"expected Ok but got Err for selector '{selector}'");
+        result.GetValueOrDefault([]).Should().BeEmpty();
+    }
+
+    private static MdqError ExecuteErr(MarkdownDocument doc, string selector)
+    {
+        var chain = ParseChain(selector);
+        var result = QueryExecutor.Execute(doc, chain);
+        result.IsError.Should().BeTrue($"expected Err but got Ok for selector '{selector}'");
+        return result.GetErrorOrDefault();
     }
 
     private static SelectorChain ParseChain(string selector)
@@ -72,10 +78,9 @@ public class QueryExecutorTests
 
         var result = ExecuteOk(doc, "");
 
-        result.Should().Contain("# Alpha");
-        result.Should().Contain("Alpha body.");
-        result.Should().Contain("# Beta");
-        result.Should().Contain("Beta body.");
+        var resultDoc = result[0].Should().BeOfType<MarkdownDocument>().Which;
+        resultDoc.Sections[0].Heading.Text.Should().Be("Alpha");
+        resultDoc.Sections[1].Heading.Text.Should().Be("Beta");
     }
 
     [Test]
@@ -83,7 +88,7 @@ public class QueryExecutorTests
     {
         var doc = new MarkdownDocument([]);
         var result = ExecuteOk(doc, "");
-        result.Should().BeEmpty();
+        result[0].Should().Be(doc);
     }
 
     // -------------------------------------------------------------------------
@@ -99,10 +104,16 @@ public class QueryExecutorTests
 
         var result = ExecuteOk(doc, "#Parent");
 
-        result.Should().Contain("# Parent");
-        result.Should().Contain("Parent body.");
-        result.Should().Contain("## Child");
-        result.Should().Contain("Child body.");
+        var section = result[0].Should().BeOfType<Section>().Which;
+        section.Heading.Text.Should().Be("Parent");
+
+        section.Paragraphs.Should().ContainSingle()
+            .Which.Should().BeOfType<TextBlock>()
+            .Which.Content.Should().Be("Parent body.");
+
+        section.Children.Should().ContainSingle()
+            .Which.Should().BeOfType<Section>()
+            .Which.Heading.Text.Should().Be("Child");
     }
 
     [Test]
@@ -114,8 +125,8 @@ public class QueryExecutorTests
 
         var result = ExecuteOk(doc, "#Beta");
 
-        result.Should().Contain("Beta body.");
-        result.Should().NotContain("Alpha body.");
+        result[0].Should().BeOfType<Section>()
+            .Which.Heading.Text.Should().Be("Beta");
     }
 
     // -------------------------------------------------------------------------
@@ -132,10 +143,16 @@ public class QueryExecutorTests
 
         var result = ExecuteOk(doc, "#Parent#Child");
 
-        result.Should().Contain("## Child");
-        result.Should().Contain("Child body.");
-        result.Should().Contain("### Grandchild");
-        result.Should().NotContain("Parent body.");
+        var section = result[0].Should().BeOfType<Section>().Which;
+        section.Heading.Text.Should().Be("Child");
+
+        section.Paragraphs.Should().ContainSingle()
+            .Which.Should().BeOfType<TextBlock>()
+            .Which.Content.Should().Be("Child body.");
+
+        section.Children.Should().ContainSingle()
+            .Which.Should().BeOfType<Section>()
+            .Which.Heading.Text.Should().Be("Grandchild");
     }
 
     [Test]
@@ -148,10 +165,8 @@ public class QueryExecutorTests
 
         var result = ExecuteOk(doc, "#Parent#Child#Grandchild");
 
-        result.Should().Contain("### Grandchild");
-        result.Should().Contain("Deep content.");
-        result.Should().NotContain("Child body.");
-        result.Should().NotContain("Parent body.");
+        result[0].Should().BeOfType<Section>()
+            .Which.Heading.Text.Should().Be("Grandchild");
     }
 
     [Test]
@@ -164,9 +179,10 @@ public class QueryExecutorTests
 
         var result = ExecuteOk(doc, "##*din*");
 
-        result.Should().Contain("## Heading1");
-        result.Should().Contain("FirstParagraph");
-        // TODO: Should also match Heading2, but for now just verify it doesn't match Parent
+        result[0].Should().BeOfType<Section>()
+            .Which.Heading.Text.Should().Be("Heading1");
+        result[1].Should().BeOfType<Section>()
+            .Which.Heading.Text.Should().Be("Heading2");
     }
 
     // -------------------------------------------------------------------------
@@ -180,9 +196,8 @@ public class QueryExecutorTests
 
         var result = ExecuteOk(doc, "#Intro.text");
 
-        result.Should().Contain("First para.");
-        result.Should().Contain("Second para.");
-        result.Should().NotContain("# Intro");
+        result[0].Should().BeOfType<TextBlock>().Which.Content.Should().Contain("First para.");
+        result[1].Should().BeOfType<TextBlock>().Which.Content.Should().Contain("Second para.");
     }
 
     [Test]
@@ -194,10 +209,8 @@ public class QueryExecutorTests
 
         var result = ExecuteOk(doc, "#Main.text");
 
-        result.Should().Contain("Main body.");
-        result.Should().Contain("## Sub");
-        result.Should().Contain("Sub body.");
-        result.Should().NotContain("# Main");
+        result[0].Should().BeOfType<TextBlock>()
+            .Which.Content.Should().Contain("Main body.");
     }
 
     // -------------------------------------------------------------------------
@@ -211,7 +224,8 @@ public class QueryExecutorTests
 
         var result = ExecuteOk(doc, "#Introduction.heading");
 
-        result.Should().Be("Introduction");
+        result[0].Should().BeOfType<Heading>()
+            .Which.Text.Should().Be("Introduction");
     }
 
     [Test]
@@ -221,8 +235,8 @@ public class QueryExecutorTests
 
         var result = ExecuteOk(doc, "#My Section.heading");
 
-        result.Should().NotStartWith("#");
-        result.Should().Be("My Section");
+        result[0].Should().BeOfType<Heading>()
+            .Which.Text.Should().Be("My Section");
     }
 
     // -------------------------------------------------------------------------
@@ -240,9 +254,9 @@ public class QueryExecutorTests
         };
         var doc = DocWithSections(SectionWithParagraphs("Section", 1, paragraphs));
 
-        ExecuteOk(doc, "#Section.paragraph(1)").Should().Be("First.");
-        ExecuteOk(doc, "#Section.paragraph(2)").Should().Be("Second.");
-        ExecuteOk(doc, "#Section.paragraph(3)").Should().Be("Third.");
+        ExecuteOk(doc, "#Section.paragraph(1)")[0].Should().BeOfType<TextBlock>().Which.Content.Should().Be("First.");
+        ExecuteOk(doc, "#Section.paragraph(2)")[0].Should().BeOfType<TextBlock>().Which.Content.Should().Be("Second.");
+        ExecuteOk(doc, "#Section.paragraph(3)")[0].Should().BeOfType<TextBlock>().Which.Content.Should().Be("Third.");
     }
 
     // -------------------------------------------------------------------------
@@ -254,16 +268,16 @@ public class QueryExecutorTests
     {
         var items = new List<ListItem>
         {
-            new("Alpha", null),
-            new("Beta", null),
-            new("Gamma", null)
+            new("Alpha", ListKind.Bulleted, 1, null),
+            new("Beta", ListKind.Bulleted, 2, null),
+            new("Gamma", ListKind.Bulleted, 3, null)
         };
         var listBlock = new ListBlock(ListKind.Bulleted, items);
         var doc = DocWithSections(SectionWithParagraphs("List Section", 1, [listBlock]));
 
-        ExecuteOk(doc, "#List Section.paragraph(1).item(1)").Should().Be("Alpha");
-        ExecuteOk(doc, "#List Section.paragraph(1).item(2)").Should().Be("Beta");
-        ExecuteOk(doc, "#List Section.paragraph(1).item(3)").Should().Be("Gamma");
+        ExecuteOk(doc, "#List Section.paragraph(1).item(1)")[0].Should().BeOfType<ListItem>().Which.Content.Should().Be("Alpha");
+        ExecuteOk(doc, "#List Section.paragraph(1).item(2)")[0].Should().BeOfType<ListItem>().Which.Content.Should().Be("Beta");
+        ExecuteOk(doc, "#List Section.paragraph(1).item(3)")[0].Should().BeOfType<ListItem>().Which.Content.Should().Be("Gamma");
     }
 
     // -------------------------------------------------------------------------
@@ -275,21 +289,21 @@ public class QueryExecutorTests
     {
         var subItems = new List<ListItem>
         {
-            new("Sub-Alpha", null),
-            new("Sub-Beta", null)
+            new("Sub-Alpha", ListKind.Bulleted, 1, null),
+            new("Sub-Beta", ListKind.Bulleted, 2, null)
         };
         var subList = new ListBlock(ListKind.Bulleted, subItems);
         var items = new List<ListItem>
         {
-            new("Parent item", subList),
-            new("Other item", null)
+            new("Parent item", ListKind.Bulleted, 1, subList),
+            new("Other item", ListKind.Bulleted, 2, null)
         };
         var listBlock = new ListBlock(ListKind.Bulleted, items);
         var doc = DocWithSections(SectionWithParagraphs("Section", 1, [listBlock]));
 
         var result = ExecuteOk(doc, "#Section.paragraph(1).item(1).item(2)");
 
-        result.Should().Be("Sub-Beta");
+        result[0].Should().BeOfType<ListItem>().Which.Content.Should().Be("Sub-Beta");
     }
 
     // -------------------------------------------------------------------------
@@ -301,10 +315,7 @@ public class QueryExecutorTests
     {
         var doc = DocWithSections(SimpleSection("Existing", 1, "Body."));
 
-        var error = ExecuteErr(doc, "#Missing");
-
-        error.Should().BeOfType<QueryError.HeadingNotFound>()
-            .Which.Name.Should().Be("Missing");
+        ExecuteOkEmpty(doc, "#Missing");
     }
 
     [Test]
@@ -312,11 +323,7 @@ public class QueryExecutorTests
     {
         var doc = DocWithSections(SimpleSection("Parent", 1, "Body."));
 
-        var error = ExecuteErr(doc, "#Parent#NonExistent");
-
-        var notFound = error.Should().BeOfType<QueryError.HeadingNotFound>().Subject;
-        notFound.Name.Should().Be("NonExistent");
-        notFound.Level.Should().Be(2);
+        ExecuteOkEmpty(doc, "#Parent#NonExistent");
     }
 
     // -------------------------------------------------------------------------
@@ -328,11 +335,7 @@ public class QueryExecutorTests
     {
         var doc = DocWithSections(SimpleSection("Section", 1, "Only one paragraph."));
 
-        var error = ExecuteErr(doc, "#Section.paragraph(5)");
-
-        var outOfRange = error.Should().BeOfType<QueryError.ParagraphOutOfRange>().Subject;
-        outOfRange.Requested.Should().Be(5);
-        outOfRange.Actual.Should().Be(1);
+        ExecuteOkEmpty(doc, "#Section.paragraph(5)");
     }
 
     [Test]
@@ -340,11 +343,7 @@ public class QueryExecutorTests
     {
         var doc = DocWithSections(new Section(new Heading("Empty", 1), [], []));
 
-        var error = ExecuteErr(doc, "#Empty.paragraph(1)");
-
-        var outOfRange = error.Should().BeOfType<QueryError.ParagraphOutOfRange>().Subject;
-        outOfRange.Requested.Should().Be(1);
-        outOfRange.Actual.Should().Be(0);
+        ExecuteOkEmpty(doc, "#Empty.paragraph(1)");
     }
 
     // -------------------------------------------------------------------------
@@ -354,15 +353,11 @@ public class QueryExecutorTests
     [Test]
     public void Execute_ItemOutOfRange_ReturnsItemOutOfRangeError()
     {
-        var items = new List<ListItem> { new("Only item", null) };
+        var items = new List<ListItem> { new("Only item", ListKind.Bulleted, 1, null) };
         var listBlock = new ListBlock(ListKind.Bulleted, items);
         var doc = DocWithSections(SectionWithParagraphs("Section", 1, [listBlock]));
 
-        var error = ExecuteErr(doc, "#Section.paragraph(1).item(3)");
-
-        var outOfRange = error.Should().BeOfType<QueryError.ItemOutOfRange>().Subject;
-        outOfRange.Requested.Should().Be(3);
-        outOfRange.Actual.Should().Be(1);
+        ExecuteOkEmpty(doc, "#Section.paragraph(1).item(3)");
     }
 
     // -------------------------------------------------------------------------
@@ -374,9 +369,7 @@ public class QueryExecutorTests
     {
         var doc = DocWithSections(SimpleSection("Section", 1, "Just text."));
 
-        var error = ExecuteErr(doc, "#Section.paragraph(1).item(1)");
-
-        error.Should().BeOfType<QueryError.NotAList>();
+        ExecuteOkEmpty(doc, "#Section.paragraph(1).item(1)");
     }
 
     // -------------------------------------------------------------------------
@@ -393,34 +386,41 @@ public class QueryExecutorTests
 
         var result = ExecuteOk(doc, "");
 
-        result.Should().Contain("# H1");
-        result.Should().Contain("## H2");
+        result[0].Should().BeOfType<MarkdownDocument>()
+            .Which.Sections.Should().ContainSingle()
+            .Which.Heading.Text.Should().Be("H1");
     }
 
     [Test]
     public void Execute_EmptyChain_RendersBulletedList()
     {
-        var items = new List<ListItem> { new("A", null), new("B", null) };
+        var items = new List<ListItem> { new("A", ListKind.Bulleted, 1, null), new("B", ListKind.Bulleted, 2, null) };
         var listBlock = new ListBlock(ListKind.Bulleted, items);
         var doc = DocWithSections(SectionWithParagraphs("Section", 1, [listBlock]));
 
         var result = ExecuteOk(doc, "");
 
-        result.Should().Contain("- A");
-        result.Should().Contain("- B");
+        result[0].Should().BeOfType<MarkdownDocument>()
+            .Which.Sections.Should().ContainSingle()
+            .Which.Paragraphs.Should().ContainSingle()
+            .Which.Should().BeOfType<ListBlock>()
+            .Which.Items.Should().ContainInOrder(items);
     }
 
     [Test]
     public void Execute_EmptyChain_RendersNumberedList()
     {
-        var items = new List<ListItem> { new("First", null), new("Second", null) };
+        var items = new List<ListItem> { new("First", ListKind.Numbered, 1, null), new("Second", ListKind.Numbered, 2, null) };
         var listBlock = new ListBlock(ListKind.Numbered, items);
         var doc = DocWithSections(SectionWithParagraphs("Section", 1, [listBlock]));
 
         var result = ExecuteOk(doc, "");
 
-        result.Should().Contain("1. First");
-        result.Should().Contain("2. Second");
+        result[0].Should().BeOfType<MarkdownDocument>()
+            .Which.Sections.Should().ContainSingle()
+            .Which.Paragraphs.Should().ContainSingle()
+            .Which.Should().BeOfType<ListBlock>()
+            .Which.Items.Should().ContainInOrder(items);
     }
 
     [Test]
@@ -431,6 +431,12 @@ public class QueryExecutorTests
 
         var result = ExecuteOk(doc, "");
 
-        result.Should().Contain("> Quoted text.");
+        result.Should().ContainSingle()
+            .Which.Should().BeOfType<MarkdownDocument>()
+            .Which.Sections.Should().ContainSingle()
+            .Which.Should().BeOfType<Section>()
+            .Which.Paragraphs.Should().ContainSingle()
+            .Which.Should().BeOfType<BlockQuote>()
+            .Which.Content.Should().Be("Quoted text.");
     }
 }

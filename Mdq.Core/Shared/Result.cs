@@ -2,11 +2,30 @@ namespace Mdq.Core.Shared;
 
 public abstract record Result<T, E>
 {
+    public bool IsSuccess => this is Ok;
+    public bool IsError => this is Err;
+
     public sealed record Ok(T Value) : Result<T, E>;
     public sealed record Err(E Error) : Result<T, E>;
 
     public static implicit operator Result<T, E>(T value) => new Ok(value);
     public static implicit operator Result<T, E>(E error) => new Err(error);
+
+    public T GetValueOrDefault(T defaultValue = default!)
+        => this switch
+        {
+            Ok(var v) => v,
+            Err => defaultValue,
+            _ => throw new InvalidOperationException()
+        };
+
+    public E GetErrorOrDefault(E defaultError = default!)
+        => this switch
+        {
+            Ok => defaultError,
+            Err(var e) => e,
+            _ => throw new InvalidOperationException()
+        };
 
     public Result<U, E> Map<U>(Func<T, U> f)
         => this switch

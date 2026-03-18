@@ -119,12 +119,12 @@ public static class MarkdownParser
         var kind = lb.IsOrdered ? ListKind.Numbered : ListKind.Bulleted;
         var items = lb
             .OfType<ListItemBlock>()
-            .Select(MapListItem)
+            .Select((lib, index) => MapListItem(lib, kind, index + 1))
             .ToList();
         return new ListBlock(kind, items);
     }
 
-    private static ListItem MapListItem(ListItemBlock lib)
+    private static ListItem MapListItem(ListItemBlock lib, ListKind kind, int index)
     {
         var subList = lib.OfType<Markdig.Syntax.ListBlock>().FirstOrDefault();
         var textContent = lib
@@ -133,7 +133,7 @@ public static class MarkdownParser
             .FirstOrDefault() ?? string.Empty;
 
         var mappedSubList = subList is not null ? MapListBlock(subList) : null;
-        return new ListItem(textContent, mappedSubList);
+        return new ListItem(textContent, kind, index, mappedSubList);
     }
 
     // -------------------------------------------------------------------------
