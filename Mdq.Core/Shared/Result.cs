@@ -52,17 +52,18 @@ public abstract record Result<T, E>
         };
 
     public Result<(T, T2), E> With<T2>(Func<T, Result<T2, E>> getOther)
-        => this switch
-        {
-            Ok(var v1) => getOther(v1) switch
-            {
-                Ok(T2 v2) => (v1, v2),
-                Err(var e2) => e2,
-                _ => throw new InvalidOperationException()
-            },
-            Err(var e) => new Result<(T, T2), E>.Err(e),
-            _ => throw new InvalidOperationException()
-        };
+    {
+        if (this is Err e1)
+            return new Result<(T, T2), E>.Err(e1.Error);
+        var ok1 = this as Ok;
+        var v1 = ok1!.Value;
+        var inner = getOther(v1);
+        if (inner is Err e2)
+            return new Result<(T, T2), E>.Err(e2.Error);
+
+        var v2 = (inner as Result<T2, E>.Ok)!.Value;
+        return new Result<(T, T2), E>.Ok((v1!, v2!));
+    }
 
     public Result<T, E> Switch(Action<T> onValue, Action<E> onError)
     {

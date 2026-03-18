@@ -15,4 +15,4 @@
     - Selector to get all lists (without headings)
 - Selector to get all headings (without contents, basically a TOC). Also can we turn this into a graphical tree? 
     - Maybe a `--tree` flag that gets all headings and then a custom renderer that turns it into a tree?
-- 
+- Change CLI args to `mdq <selector> <file>`

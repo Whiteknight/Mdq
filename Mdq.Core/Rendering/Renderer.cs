@@ -3,7 +3,7 @@ using Mdq.Core.DocumentModel;
 
 namespace Mdq.Core.Rendering;
 
-internal static class Renderer
+public static class Renderer
 {
     private static int _listIndent = 0;
 

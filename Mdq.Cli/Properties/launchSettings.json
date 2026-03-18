@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Mdq.Cli": {
+      "commandName": "Project",
+      "commandLineArgs": "C:\\projects\\mdq\\README.md \"\""
+    }
+  }
+}

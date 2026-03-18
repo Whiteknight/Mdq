@@ -1,5 +1,6 @@
 ﻿using Mdq.Core.DocumentModel;
 using Mdq.Core.QueryEngine;
+using Mdq.Core.Rendering;
 using Mdq.Core.SelectorModel;
 using Mdq.Core.Shared;
 
@@ -30,8 +31,9 @@ internal static class Program
             .Bind(MarkdownParser.Parse)
             .With(_ => SelectorParser.Parse(selectorArg))
             .Bind((args) => QueryExecutor.Execute(args.Item1, args.Item2))
+            .Map(Renderer.Render)
             .Switch(
-                v => Console.WriteLine(v),
+                s => Console.WriteLine(s),
                 e => Console.Error.WriteLine($"Error: {e.Message}"))
             .Match(
                 _ => 0,

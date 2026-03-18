@@ -11,6 +11,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mdq.Tests", "Mdq.Tests\Mdq.
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{FBBE53FD-0DF9-4470-91E5-A566B1C6A761}"
 	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
 		TODO.md = TODO.md
 	EndProjectSection
 EndProject
