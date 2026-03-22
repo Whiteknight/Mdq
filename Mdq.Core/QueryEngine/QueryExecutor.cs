@@ -78,6 +78,7 @@ public static class QueryExecutor
                 Section s => s.Paragraphs.Cast<MatchableItem>(),
                 Heading h and { Text: { } } => [new TextBlock(h.Text, 1)],
                 ListItem li => [new TextBlock(li.Content, 1)],
+                CodeBlock cb => [new TextBlock(cb.Content, 1)],
                 _ => []
             })
             .ToList();

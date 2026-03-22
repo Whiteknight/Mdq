@@ -18,18 +18,18 @@ namespace Mdq.SpecTests.Features
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Reqnroll", "3.0.0.0")]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     [global::NUnit.Framework.TestFixtureAttribute()]
-    [global::NUnit.Framework.DescriptionAttribute("Paragraph")]
+    [global::NUnit.Framework.DescriptionAttribute("CodeBlock")]
     [global::NUnit.Framework.FixtureLifeCycleAttribute(global::NUnit.Framework.LifeCycle.InstancePerTestCase)]
-    public partial class ParagraphFeature
+    public partial class CodeBlockFeature
     {
         
         private global::Reqnroll.ITestRunner testRunner;
         
         private static string[] featureTags = ((string[])(null));
         
-        private static global::Reqnroll.FeatureInfo featureInfo = new global::Reqnroll.FeatureInfo(new global::System.Globalization.CultureInfo("en-US"), "Features", "Paragraph", "A short summary of the feature", global::Reqnroll.ProgrammingLanguage.CSharp, featureTags, InitializeCucumberMessages());
+        private static global::Reqnroll.FeatureInfo featureInfo = new global::Reqnroll.FeatureInfo(new global::System.Globalization.CultureInfo("en-US"), "Features", "CodeBlock", "A short summary of the feature", global::Reqnroll.ProgrammingLanguage.CSharp, featureTags, InitializeCucumberMessages());
         
-#line 1 "Paragraph.feature"
+#line 1 "CodeBlock.feature"
 #line hidden
         
         [global::NUnit.Framework.OneTimeSetUpAttribute()]
@@ -105,20 +105,20 @@ namespace Mdq.SpecTests.Features
         
         private static global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages InitializeCucumberMessages()
         {
-            return new global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages("Features/Paragraph.feature.ndjson", 8);
+            return new global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages("Features/CodeBlock.feature.ndjson", 8);
         }
         
         [global::NUnit.Framework.TestAttribute()]
-        [global::NUnit.Framework.DescriptionAttribute("I can get paragraph(1) at root")]
-        public async global::System.Threading.Tasks.Task ICanGetParagraph1AtRoot()
+        [global::NUnit.Framework.DescriptionAttribute("I can get the first code block")]
+        public async global::System.Threading.Tasks.Task ICanGetTheFirstCodeBlock()
         {
             string[] tagsOfScenario = ((string[])(null));
             global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
             string pickleIndex = "0";
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("I can get paragraph(1) at root", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("I can get the first code block", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
-            global::Reqnroll.RuleInfo ruleInfo = new global::Reqnroll.RuleInfo("Get an entire section by heading name", null, tagsOfRule);
-#line 27
+            global::Reqnroll.RuleInfo ruleInfo = new global::Reqnroll.RuleInfo("Get code block", null, tagsOfRule);
+#line 25
     this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -129,43 +129,31 @@ namespace Mdq.SpecTests.Features
             {
                 await this.ScenarioStartAsync();
 #line 8
-        await testRunner.GivenAsync("I have markdown text:", @"First parentless paragraph
-
-Second parentless paragraph
-
-# First Level Heading
-
-First paragraph under First Level Heading
-
-Second paragraph under First Level Heading
-
-## Second Level Heading
-
-First paragraph under Second Level Heading
-
-Second paragraph under Second Level Heading", ((global::Reqnroll.Table)(null)), "Given ");
+        await testRunner.GivenAsync("I have markdown text:", "    First code block is indented\r\n    by four spaces\r\n\r\n```\r\nSecond code block is" +
+                        " fenced\r\nbut with no language\r\n```\r\n\r\n```csharp\r\nvar thirdCodeBlock = FencedWith" +
+                        "Language(\r\n    \"csharp\"\r\n);\r\n```", ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 28
+#line 26
         await testRunner.WhenAsync("I execute selector \".paragraph(1)\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 29
-        await testRunner.ThenAsync("The result text should be:", "First parentless paragraph", ((global::Reqnroll.Table)(null)), "Then ");
+#line 27
+        await testRunner.ThenAsync("The result text should be:", "```\r\nFirst code block is indented\r\nby four spaces\r\n```", ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
         [global::NUnit.Framework.TestAttribute()]
-        [global::NUnit.Framework.DescriptionAttribute("I can get paragraph(2) at root")]
-        public async global::System.Threading.Tasks.Task ICanGetParagraph2AtRoot()
+        [global::NUnit.Framework.DescriptionAttribute("I can get the second code block")]
+        public async global::System.Threading.Tasks.Task ICanGetTheSecondCodeBlock()
         {
             string[] tagsOfScenario = ((string[])(null));
             global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
             string pickleIndex = "1";
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("I can get paragraph(2) at root", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("I can get the second code block", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
-            global::Reqnroll.RuleInfo ruleInfo = new global::Reqnroll.RuleInfo("Get an entire section by heading name", null, tagsOfRule);
-#line 34
+            global::Reqnroll.RuleInfo ruleInfo = new global::Reqnroll.RuleInfo("Get code block", null, tagsOfRule);
+#line 35
     this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -176,43 +164,31 @@ Second paragraph under Second Level Heading", ((global::Reqnroll.Table)(null)), 
             {
                 await this.ScenarioStartAsync();
 #line 8
-        await testRunner.GivenAsync("I have markdown text:", @"First parentless paragraph
-
-Second parentless paragraph
-
-# First Level Heading
-
-First paragraph under First Level Heading
-
-Second paragraph under First Level Heading
-
-## Second Level Heading
-
-First paragraph under Second Level Heading
-
-Second paragraph under Second Level Heading", ((global::Reqnroll.Table)(null)), "Given ");
-#line hidden
-#line 35
-        await testRunner.WhenAsync("I execute selector \".paragraph(2)\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+        await testRunner.GivenAsync("I have markdown text:", "    First code block is indented\r\n    by four spaces\r\n\r\n```\r\nSecond code block is" +
+                        " fenced\r\nbut with no language\r\n```\r\n\r\n```csharp\r\nvar thirdCodeBlock = FencedWith" +
+                        "Language(\r\n    \"csharp\"\r\n);\r\n```", ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 36
-        await testRunner.ThenAsync("The result text should be:", "Second parentless paragraph", ((global::Reqnroll.Table)(null)), "Then ");
+        await testRunner.WhenAsync("I execute selector \".paragraph(2)\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 37
+        await testRunner.ThenAsync("The result text should be:", "```\r\nSecond code block is fenced\r\nbut with no language\r\n```", ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
         [global::NUnit.Framework.TestAttribute()]
-        [global::NUnit.Framework.DescriptionAttribute("I can get paragraph(1) at first heading")]
-        public async global::System.Threading.Tasks.Task ICanGetParagraph1AtFirstHeading()
+        [global::NUnit.Framework.DescriptionAttribute("I can get the third code block")]
+        public async global::System.Threading.Tasks.Task ICanGetTheThirdCodeBlock()
         {
             string[] tagsOfScenario = ((string[])(null));
             global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
             string pickleIndex = "2";
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("I can get paragraph(1) at first heading", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("I can get the third code block", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
-            global::Reqnroll.RuleInfo ruleInfo = new global::Reqnroll.RuleInfo("Get an entire section by heading name", null, tagsOfRule);
-#line 41
+            global::Reqnroll.RuleInfo ruleInfo = new global::Reqnroll.RuleInfo("Get code block", null, tagsOfRule);
+#line 45
     this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -223,43 +199,31 @@ Second paragraph under Second Level Heading", ((global::Reqnroll.Table)(null)), 
             {
                 await this.ScenarioStartAsync();
 #line 8
-        await testRunner.GivenAsync("I have markdown text:", @"First parentless paragraph
-
-Second parentless paragraph
-
-# First Level Heading
-
-First paragraph under First Level Heading
-
-Second paragraph under First Level Heading
-
-## Second Level Heading
-
-First paragraph under Second Level Heading
-
-Second paragraph under Second Level Heading", ((global::Reqnroll.Table)(null)), "Given ");
+        await testRunner.GivenAsync("I have markdown text:", "    First code block is indented\r\n    by four spaces\r\n\r\n```\r\nSecond code block is" +
+                        " fenced\r\nbut with no language\r\n```\r\n\r\n```csharp\r\nvar thirdCodeBlock = FencedWith" +
+                        "Language(\r\n    \"csharp\"\r\n);\r\n```", ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 42
-        await testRunner.WhenAsync("I execute selector \"#.paragraph(1)\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line 46
+        await testRunner.WhenAsync("I execute selector \".paragraph(3)\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 43
-        await testRunner.ThenAsync("The result text should be:", "First paragraph under First Level Heading", ((global::Reqnroll.Table)(null)), "Then ");
+#line 47
+        await testRunner.ThenAsync("The result text should be:", "```csharp\r\nvar thirdCodeBlock = FencedWithLanguage(\r\n    \"csharp\"\r\n);\r\n```", ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
         [global::NUnit.Framework.TestAttribute()]
-        [global::NUnit.Framework.DescriptionAttribute("I can get paragraph(2) at first heading")]
-        public async global::System.Threading.Tasks.Task ICanGetParagraph2AtFirstHeading()
+        [global::NUnit.Framework.DescriptionAttribute("I can get the first code block raw")]
+        public async global::System.Threading.Tasks.Task ICanGetTheFirstCodeBlockRaw()
         {
             string[] tagsOfScenario = ((string[])(null));
             global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
             string pickleIndex = "3";
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("I can get paragraph(2) at first heading", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("I can get the first code block raw", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
-            global::Reqnroll.RuleInfo ruleInfo = new global::Reqnroll.RuleInfo("Get an entire section by heading name", null, tagsOfRule);
-#line 48
+            global::Reqnroll.RuleInfo ruleInfo = new global::Reqnroll.RuleInfo("Get code block raw", null, tagsOfRule);
+#line 76
     this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -269,91 +233,32 @@ Second paragraph under Second Level Heading", ((global::Reqnroll.Table)(null)), 
             else
             {
                 await this.ScenarioStartAsync();
-#line 8
-        await testRunner.GivenAsync("I have markdown text:", @"First parentless paragraph
-
-Second parentless paragraph
-
-# First Level Heading
-
-First paragraph under First Level Heading
-
-Second paragraph under First Level Heading
-
-## Second Level Heading
-
-First paragraph under Second Level Heading
-
-Second paragraph under Second Level Heading", ((global::Reqnroll.Table)(null)), "Given ");
+#line 59
+        await testRunner.GivenAsync("I have markdown text:", "    First code block is indented\r\n    by four spaces\r\n\r\n```\r\nSecond code block is" +
+                        " fenced\r\nbut with no language\r\n```\r\n\r\n```csharp\r\nvar thirdCodeBlock = FencedWith" +
+                        "Language(\r\n    \"csharp\"\r\n);\r\n```", ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 49
-        await testRunner.WhenAsync("I execute selector \"#.paragraph(2)\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line 77
+        await testRunner.WhenAsync("I execute selector \".paragraph(1).text\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 50
-        await testRunner.ThenAsync("The result text should be:", "Second paragraph under First Level Heading", ((global::Reqnroll.Table)(null)), "Then ");
+#line 78
+        await testRunner.ThenAsync("The result text should be:", "First code block is indented\r\nby four spaces", ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
         [global::NUnit.Framework.TestAttribute()]
-        [global::NUnit.Framework.DescriptionAttribute("I can get paragraph(1) at second heading")]
-        public async global::System.Threading.Tasks.Task ICanGetParagraph1AtSecondHeading()
+        [global::NUnit.Framework.DescriptionAttribute("I can get the second code block raw")]
+        public async global::System.Threading.Tasks.Task ICanGetTheSecondCodeBlockRaw()
         {
             string[] tagsOfScenario = ((string[])(null));
             global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
             string pickleIndex = "4";
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("I can get paragraph(1) at second heading", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("I can get the second code block raw", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
-            global::Reqnroll.RuleInfo ruleInfo = new global::Reqnroll.RuleInfo("Get an entire section by heading name", null, tagsOfRule);
-#line 55
-     this.ScenarioInitialize(scenarioInfo, ruleInfo);
-#line hidden
-            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
-            {
-                await testRunner.SkipScenarioAsync();
-            }
-            else
-            {
-                await this.ScenarioStartAsync();
-#line 8
-        await testRunner.GivenAsync("I have markdown text:", @"First parentless paragraph
-
-Second parentless paragraph
-
-# First Level Heading
-
-First paragraph under First Level Heading
-
-Second paragraph under First Level Heading
-
-## Second Level Heading
-
-First paragraph under Second Level Heading
-
-Second paragraph under Second Level Heading", ((global::Reqnroll.Table)(null)), "Given ");
-#line hidden
-#line 56
-        await testRunner.WhenAsync("I execute selector \"##.paragraph(1)\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
-#line hidden
-#line 57
-        await testRunner.ThenAsync("The result text should be:", "First paragraph under Second Level Heading", ((global::Reqnroll.Table)(null)), "Then ");
-#line hidden
-            }
-            await this.ScenarioCleanupAsync();
-        }
-        
-        [global::NUnit.Framework.TestAttribute()]
-        [global::NUnit.Framework.DescriptionAttribute("I can get paragraph(2) at second heading")]
-        public async global::System.Threading.Tasks.Task ICanGetParagraph2AtSecondHeading()
-        {
-            string[] tagsOfScenario = ((string[])(null));
-            global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
-            string pickleIndex = "5";
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("I can get paragraph(2) at second heading", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
-            string[] tagsOfRule = ((string[])(null));
-            global::Reqnroll.RuleInfo ruleInfo = new global::Reqnroll.RuleInfo("Get an entire section by heading name", null, tagsOfRule);
-#line 62
+            global::Reqnroll.RuleInfo ruleInfo = new global::Reqnroll.RuleInfo("Get code block raw", null, tagsOfRule);
+#line 84
     this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -363,28 +268,51 @@ Second paragraph under Second Level Heading", ((global::Reqnroll.Table)(null)), 
             else
             {
                 await this.ScenarioStartAsync();
-#line 8
-        await testRunner.GivenAsync("I have markdown text:", @"First parentless paragraph
-
-Second parentless paragraph
-
-# First Level Heading
-
-First paragraph under First Level Heading
-
-Second paragraph under First Level Heading
-
-## Second Level Heading
-
-First paragraph under Second Level Heading
-
-Second paragraph under Second Level Heading", ((global::Reqnroll.Table)(null)), "Given ");
+#line 59
+        await testRunner.GivenAsync("I have markdown text:", "    First code block is indented\r\n    by four spaces\r\n\r\n```\r\nSecond code block is" +
+                        " fenced\r\nbut with no language\r\n```\r\n\r\n```csharp\r\nvar thirdCodeBlock = FencedWith" +
+                        "Language(\r\n    \"csharp\"\r\n);\r\n```", ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 63
-        await testRunner.WhenAsync("I execute selector \"##.paragraph(2)\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line 85
+        await testRunner.WhenAsync("I execute selector \".paragraph(2).text\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 64
-        await testRunner.ThenAsync("The result text should be:", "Second paragraph under Second Level Heading", ((global::Reqnroll.Table)(null)), "Then ");
+#line 86
+        await testRunner.ThenAsync("The result text should be:", "Second code block is fenced\r\nbut with no language", ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [global::NUnit.Framework.TestAttribute()]
+        [global::NUnit.Framework.DescriptionAttribute("I can get the third code block raw")]
+        public async global::System.Threading.Tasks.Task ICanGetTheThirdCodeBlockRaw()
+        {
+            string[] tagsOfScenario = ((string[])(null));
+            global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
+            string pickleIndex = "5";
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("I can get the third code block raw", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
+            string[] tagsOfRule = ((string[])(null));
+            global::Reqnroll.RuleInfo ruleInfo = new global::Reqnroll.RuleInfo("Get code block raw", null, tagsOfRule);
+#line 92
+    this.ScenarioInitialize(scenarioInfo, ruleInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                await testRunner.SkipScenarioAsync();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 59
+        await testRunner.GivenAsync("I have markdown text:", "    First code block is indented\r\n    by four spaces\r\n\r\n```\r\nSecond code block is" +
+                        " fenced\r\nbut with no language\r\n```\r\n\r\n```csharp\r\nvar thirdCodeBlock = FencedWith" +
+                        "Language(\r\n    \"csharp\"\r\n);\r\n```", ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 93
+        await testRunner.WhenAsync("I execute selector \".paragraph(3).text\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 94
+        await testRunner.ThenAsync("The result text should be:", "var thirdCodeBlock = FencedWithLanguage(\r\n    \"csharp\"\r\n);", ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();

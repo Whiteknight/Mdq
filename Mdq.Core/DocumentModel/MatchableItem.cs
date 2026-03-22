@@ -61,6 +61,8 @@ public sealed record ListBlock(ListKind Kind, IReadOnlyList<ListItem> Items, int
 
 public sealed record BlockQuote(string Content, int Index) : Paragraph(Index);
 
+public sealed record CodeBlock(string? Language, string Content, int Index) : Paragraph(Index);
+
 public record ListItem(
     string Content,
     ListKind Kind,

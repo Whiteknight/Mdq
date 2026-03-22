@@ -60,6 +60,10 @@ public static class Renderer
             case ListItem li:
                 RenderListItem(li, sb);
                 break;
+
+            case CodeBlock cb:
+                RenderCodeBlock(cb, sb);
+                break;
         }
     }
 
@@ -81,7 +85,7 @@ public static class Renderer
         for (int i = 0; i < listBlock.Items.Count; i++)
         {
             if (sb.Length > 0)
-                sb.Append('\n');
+                sb.AppendLine();
 
             var item = listBlock.Items[i];
             RenderListItem(item, sb);
@@ -95,10 +99,17 @@ public static class Renderer
 
         if (item.SubList is not null)
         {
-            sb.Append('\n');
+            sb.AppendLine();
             _listIndent++;
             RenderItem(item.SubList, sb);
             _listIndent--;
         }
+    }
+
+    private static void RenderCodeBlock(CodeBlock cb, StringBuilder sb)
+    {
+        sb.AppendLine($"```{cb.Language}");
+        sb.AppendLine(cb.Content);
+        sb.AppendLine("```");
     }
 }

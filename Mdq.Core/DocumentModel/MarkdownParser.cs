@@ -1,3 +1,4 @@
+using Markdig.Helpers;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
 using Mdq.Core.Shared;
@@ -60,6 +61,8 @@ public static class MarkdownParser
             ParagraphBlock p => new TextBlock(ExtractInlineText(p.Inline), paragraphIndex),
             Markdig.Syntax.ListBlock lb => MapListBlock(lb, paragraphIndex),
             QuoteBlock qb => new BlockQuote(ExtractQuoteText(qb), paragraphIndex),
+            Markdig.Syntax.FencedCodeBlock fcb => new CodeBlock(fcb.Info, ExtractLineText(fcb.Lines), paragraphIndex),
+            Markdig.Syntax.CodeBlock cb => new CodeBlock(null, ExtractLineText(cb.Lines), paragraphIndex),
             _ => null
         };
 
@@ -182,6 +185,11 @@ public static class MarkdownParser
         var lines = qb
             .OfType<ParagraphBlock>()
             .Select(p => ExtractInlineText(p.Inline));
-        return string.Join("\n", lines).Trim();
+        return string.Join(Environment.NewLine, lines).Trim();
+    }
+
+    private static string ExtractLineText(StringLineGroup lines)
+    {
+        return string.Join(Environment.NewLine, lines.Lines).Trim();
     }
 }
