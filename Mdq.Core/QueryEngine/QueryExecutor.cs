@@ -36,7 +36,7 @@ public static class QueryExecutor
         {
             current = selector switch
             {
-                SelectorSegment.Heading h => ResolveHeading(h, current),
+                SelectorSegment.Heading h => ResolvePoundHeading(h, current),
                 SelectorSegment.Text => ResolveDotText(current),
                 SelectorSegment.HeadingContent => ResolveDotHeading(current),
                 SelectorSegment.ParagraphAt p => ResolveDotParagraphN(p, current),
@@ -50,7 +50,7 @@ public static class QueryExecutor
         return current;
     }
 
-    private static List<MatchableItem> ResolveHeading(
+    private static List<MatchableItem> ResolvePoundHeading(
         SelectorSegment.Heading selector,
         List<MatchableItem> items)
     {
@@ -76,6 +76,8 @@ public static class QueryExecutor
             {
                 MarkdownDocument md => md.Sections[0].Paragraphs.Cast<MatchableItem>(),
                 Section s => s.Paragraphs.Cast<MatchableItem>(),
+                Heading h and { Text: { } } => [new TextBlock(h.Text, 1)],
+                ListItem li => [new TextBlock(li.Content, 1)],
                 _ => []
             })
             .ToList();
@@ -102,6 +104,7 @@ public static class QueryExecutor
         return items
             .SelectMany(i => i switch
             {
+                MarkdownDocument md => md.Sections[0].Paragraphs.Where(p => p.Index == paragraphSeg.Index),
                 Section s => s.Paragraphs.Where(p => p.Index == paragraphSeg.Index),
                 _ => []
             })

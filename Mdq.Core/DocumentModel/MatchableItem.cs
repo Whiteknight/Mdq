@@ -13,6 +13,11 @@ public record Heading(string? Text, int Level) : MatchableItem
 
     public bool IsMatch(string sectionHeading)
     {
+        // Top-level contents, before the first heading, should not be returned if we do #.
+        // # should always step us at least one level, so the first # should take us to 1, etc.
+        if (Level == 0 && Text == null)
+            return false;
+
         if (string.IsNullOrEmpty(sectionHeading))
             return true;
 

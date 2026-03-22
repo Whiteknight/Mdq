@@ -23,6 +23,8 @@ public static class SelectorParser
     /* .text
      *      When used on a MarkdownDocument, returns child paragraphs before the first heading
      *      When used on a Section, returns the child paragraphs of the section, excluding the heading and sub-sections
+     *      When used on a Heading, returns the text of the heading without leading `#`
+     *      When used on a ListItem, returns the text of the list item without the leading bullets
      *      Otherwise returns nothing
      * .heading
      *      When used on a Section, returns the text of the Heading only (no body text or sub-sections)

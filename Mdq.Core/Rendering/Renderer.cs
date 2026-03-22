@@ -24,7 +24,7 @@ public static class Renderer
         RenderItem(items[0], sb);
         foreach (var item in items.Skip(1))
         {
-            sb.Append("\n\n");
+            sb.AppendLine().AppendLine();
             RenderItem(item, sb);
         }
     }
