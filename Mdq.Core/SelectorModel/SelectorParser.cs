@@ -1,4 +1,7 @@
 using Mdq.Core.Shared;
+using ParserObjects;
+using static ParserObjects.Parsers;
+using static ParserObjects.Parsers<char>;
 
 namespace Mdq.Core.SelectorModel;
 
@@ -30,6 +33,8 @@ public static class SelectorParser
      * .item(n)
      *      When used on a ListBlock returns the ListItem at index n
      *      Otherwise returns nothing
+     * [Property=Value]
+     *      Compares values, depending on the type of object and property name
      */
 
     public static Result<SelectorChain, MdqError> Parse(string selector)
@@ -37,126 +42,91 @@ public static class SelectorParser
         if (string.IsNullOrEmpty(selector))
             return new SelectorChain([]);
 
-        var segments = new List<SelectorSegment>();
-        int pos = 0;
+        var parser = GetSelectorChainParser();
+        var parseResult = parser.Parse(selector);
+        if (!parseResult.Success)
+            return new SelectorParseError(parseResult.ErrorMessage, parseResult.Location.Column);
 
-        while (pos < selector.Length)
-        {
-            var ch = selector[pos];
+        var chain = parseResult.GetValueOrDefault(null!);
 
-            if (ch == '#')
-            {
-                var result = ParseHeading(selector, pos);
-                if (result is Result<(SelectorSegment, int), SelectorParseError>.Err err)
-                    return err.Error;
+        var errors = chain.Segments.OfType<SelectorSegment.Error>();
+        if (errors.Any())
+            return new SelectorParseError(string.Join(", ", errors.Select(e => e.Message)), 0);
 
-                var (segment, next) = ((Result<(SelectorSegment, int), SelectorParseError>.Ok)result).Value;
-                segments.Add(segment);
-                pos = next;
-                continue;
-            }
-
-            if (ch == '.')
-            {
-                var result = ParseContentSelector(selector, pos);
-                if (result is Result<(SelectorSegment, int), SelectorParseError>.Err err)
-                    return err.Error;
-
-                var (segment, next) = ((Result<(SelectorSegment, int), SelectorParseError>.Ok)result).Value;
-                segments.Add(segment);
-                pos = next;
-                continue;
-            }
-
-            return new SelectorParseError(
-                $"Unexpected character '{ch}' at position {pos}. Expected '#' or '.'.",
-                pos);
-        }
-
-        return new SelectorChain(segments);
+        return chain;
     }
 
-    // -------------------------------------------------------------------------
-    // Segment parsers
-    // -------------------------------------------------------------------------
-
-    private static Result<(SelectorSegment, int), SelectorParseError> ParseHeading(string input, int pos)
+    private static IParser<char, SelectorChain> GetSelectorChainParser()
     {
-        // pos points at '#'
-        int nameStart = pos + 1;
-        int nameEnd = nameStart;
-        while (nameEnd < input.Length && input[nameEnd] != '#' && input[nameEnd] != '.')
-            nameEnd++;
+        var poundHeading = GetPoundHeadingParser();
 
-        var name = input[nameStart..nameEnd].Trim();
-        return (new SelectorSegment.Heading(name), nameEnd);
+        var dotText = Match(".text").Map(_ => SelectorSegment.DotText());
+
+        var dotHeading = Match(".heading").Map(_ => SelectorSegment.DotHeading());
+        var dotParagraph = GetDotParagraphParser();
+        var dotItemAt = GetDotItemParser();
+        var dotUnknown = GetDotUnknownParser();
+
+        var selector = First(
+            poundHeading,
+            dotText,
+            dotHeading,
+            dotParagraph,
+            dotItemAt,
+            dotUnknown);
+
+        return Rule(
+            selector.List(1).Map(l => new SelectorChain(l)),
+            End(),
+            (sc, _) => sc);
     }
 
-    private static Result<(SelectorSegment, int), SelectorParseError> ParseContentSelector(string input, int pos)
-    {
-        // pos points at '.'
-        // Read the keyword up to '(' or end-of-string or next '#'/'.'
-        int keyStart = pos + 1;
-        int keyEnd = keyStart;
-        while (keyEnd < input.Length && input[keyEnd] != '(' && input[keyEnd] != '.' && input[keyEnd] != '#')
-            keyEnd++;
+    private static IParser<char, SelectorSegment> GetDotUnknownParser()
+        => Capture(
+            MatchChar('.'),
+            Match(c => c != '#' && c != '.').ListCharToString())
+            .Map(c => SelectorSegment.ErrorMessage($"Unknown selector '{new string(c)}'"));
 
-        var keyword = input[keyStart..keyEnd];
+    private static IParser<char, SelectorSegment> GetDotItemParser()
+        => Rule(
+            Match(".item("),
+            // Once we have '.item(', we MUST have a positive integer and a ')' or else we get some kind of error
+            First(
+                Rule(
+                    DigitsAsInteger(1, 5).Map(i => i > 0
+                        ? SelectorSegment.DotItemParenIndex(i)
+                        : SelectorSegment.ErrorMessage("Numeric value must be non-zero positive")),
+                    MatchChar(')'),
+                    (d, _) => d),
+                Rule(
+                    MatchChar(c => c != ')').ListCharToString().Map(v => SelectorSegment.ErrorMessage($"Expected positive numeric index and ')' but found '{v}'")),
+                    MatchChar(')').Optional(),
+                    (x, _) => x)
+            ),
+            (_, n) => n);
 
-        return keyword switch
-        {
-            "text" => (new SelectorSegment.Text(), keyEnd),
-            "heading" => (new SelectorSegment.HeadingContent(), keyEnd),
-            "paragraph" => ParseIndexedSelector(input, keyEnd, pos, idx => new SelectorSegment.ParagraphAt(idx)),
-            "item" => ParseIndexedSelector(input, keyEnd, pos, idx => new SelectorSegment.ItemAt(idx)),
-            _ => new SelectorParseError(
-                    $"Unknown selector '.{keyword}' at position {pos}. " +
-                    "Expected '.text', '.heading', '.paragraph(N)', or '.item(N)'.",
-                    pos)
-        };
-    }
+    private static IParser<char, SelectorSegment> GetDotParagraphParser()
+        => Rule(
+            Match(".paragraph("),
+            // Once we have '.paragraph(', we MUST have a positive integer and a ')' or else we get some kind of error
+            First(
+                Rule(
+                    DigitsAsInteger(1, 5).Map(i => i > 0
+                        ? SelectorSegment.DotParagraphParenIndex(i)
+                        : SelectorSegment.ErrorMessage("Numeric value must be non-zero positive")),
+                    MatchChar(')'),
+                    (d, _) => d),
+                Rule(
+                    MatchChar(c => c != ')').ListCharToString().Map(v => SelectorSegment.ErrorMessage($"Expected positive numeric index and ')' but found '{v}'")),
+                    MatchChar(')').Optional(),
+                    (x, _) => x)
+            ),
+            (_, n) => n);
 
-    private static Result<(SelectorSegment, int), SelectorParseError> ParseIndexedSelector(
-        string input,
-        int pos,           // points at '(' (or end-of-string if malformed)
-        int selectorStart, // position of the leading '.' for error reporting
-        Func<int, SelectorSegment> factory)
-    {
-        if (pos >= input.Length || input[pos] != '(')
-        {
-            return new SelectorParseError(
-                $"Expected '(' after selector keyword at position {pos}.",
-                pos);
-        }
-
-        int argStart = pos + 1;
-        int argEnd = argStart;
-        while (argEnd < input.Length && input[argEnd] != ')')
-            argEnd++;
-
-        if (argEnd >= input.Length)
-        {
-            return new SelectorParseError(
-                $"Missing closing ')' for selector starting at position {selectorStart}.",
-                selectorStart);
-        }
-
-        var argText = input[argStart..argEnd].Trim();
-
-        if (!int.TryParse(argText, out int index))
-        {
-            return new SelectorParseError(
-                $"Selector argument '{argText}' at position {argStart} is not an integer.",
-                argStart);
-        }
-
-        if (index <= 0)
-        {
-            return new SelectorParseError(
-                $"Selector argument {index} at position {argStart} must be a positive integer (>= 1).",
-                argStart);
-        }
-
-        return (factory(index), argEnd + 1); // +1 to consume ')'
-    }
+    private static IParser<char, SelectorSegment> GetPoundHeadingParser()
+        => Rule(
+            MatchChar('#'),
+            // TODO: Probably need a way to escape # and . characters
+            MatchChar(c => c != '#' && c != '.').ListCharToString().Optional(() => string.Empty),
+            (_, name) => SelectorSegment.PoundHeading(name.Trim()));
 }

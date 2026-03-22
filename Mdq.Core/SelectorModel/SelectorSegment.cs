@@ -2,6 +2,15 @@ namespace Mdq.Core.SelectorModel;
 
 public abstract record SelectorSegment
 {
+    public static SelectorSegment PoundHeading(string name) => new Heading(name);
+    public static SelectorSegment DotText() => new Text();
+    public static SelectorSegment DotHeading() => new HeadingContent();
+    public static SelectorSegment DotParagraphParenIndex(int index) => new ParagraphAt(index);
+    public static SelectorSegment DotItemParenIndex(int index) => new ItemAt(index);
+    public static SelectorSegment ErrorMessage(string message) => new Error(message);
+
+    public sealed record Error(string Message) : SelectorSegment;
+
     /// <summary>#Name -- navigate into a section by heading text.</summary>
     public sealed record Heading(string Name) : SelectorSegment
     {

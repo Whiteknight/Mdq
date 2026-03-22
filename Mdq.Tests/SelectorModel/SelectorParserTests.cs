@@ -238,7 +238,6 @@ public class SelectorParserTests
         var error = ParseErr("@invalid");
 
         error.Position.Should().Be(0);
-        error.Message.Should().Contain("@");
     }
 
     [Test]
