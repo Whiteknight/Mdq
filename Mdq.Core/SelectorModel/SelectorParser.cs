@@ -8,7 +8,7 @@ namespace Mdq.Core.SelectorModel;
 /// Grammar:
 ///   selector_chain   = { selector_segment }
 ///   selector_segment = heading_selector | content_selector
-///   heading_selector = "#" name
+///   heading_selector = "#" name?
 ///   content_selector = ".text" | ".heading"
 ///                    | ".paragraph(" integer ")"
 ///                    | ".item(" integer ")"
@@ -17,6 +17,21 @@ namespace Mdq.Core.SelectorModel;
 /// </summary>
 public static class SelectorParser
 {
+    /* .text
+     *      When used on a MarkdownDocument, returns child paragraphs before the first heading
+     *      When used on a Section, returns the child paragraphs of the section, excluding the heading and sub-sections
+     *      Otherwise returns nothing
+     * .heading
+     *      When used on a Section, returns the text of the Heading only (no body text or sub-sections)
+     *      Otherwise returns nothing
+     * .paragraph(n)
+     *      When used on a Section, returns the paragraph at index n
+     *      Otherwise returns nothing
+     * .item(n)
+     *      When used on a ListBlock returns the ListItem at index n
+     *      Otherwise returns nothing
+     */
+
     public static Result<SelectorChain, MdqError> Parse(string selector)
     {
         if (string.IsNullOrEmpty(selector))

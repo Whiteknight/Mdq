@@ -30,6 +30,7 @@ public static class MarkdownParser
     {
         var sections = new List<FlatSection>();
         var current = new FlatSection(null, 0, []);
+        int paragraphIndex = 1;
 
         foreach (var block in doc)
         {
@@ -37,24 +38,28 @@ public static class MarkdownParser
             {
                 sections.Add(current);
                 current = new FlatSection(ExtractInlineText(heading.Inline), heading.Level, []);
+                paragraphIndex = 1;
                 continue;
             }
 
-            var paragraph = MapBlockToParagraph(block);
+            var paragraph = MapBlockToParagraph(block, paragraphIndex);
             if (paragraph is not null)
+            {
                 current.Paragraphs.Add(paragraph);
+                paragraphIndex++;
+            }
         }
 
         sections.Add(current);
         return sections;
     }
 
-    private static Paragraph? MapBlockToParagraph(Block block)
+    private static Paragraph? MapBlockToParagraph(Block block, int paragraphIndex)
         => block switch
         {
-            ParagraphBlock p => new TextBlock(ExtractInlineText(p.Inline)),
-            Markdig.Syntax.ListBlock lb => MapListBlock(lb),
-            QuoteBlock qb => new BlockQuote(ExtractQuoteText(qb)),
+            ParagraphBlock p => new TextBlock(ExtractInlineText(p.Inline), paragraphIndex),
+            Markdig.Syntax.ListBlock lb => MapListBlock(lb, paragraphIndex),
+            QuoteBlock qb => new BlockQuote(ExtractQuoteText(qb), paragraphIndex),
             _ => null
         };
 
@@ -114,14 +119,14 @@ public static class MarkdownParser
     // List mapping
     // -------------------------------------------------------------------------
 
-    private static ListBlock MapListBlock(Markdig.Syntax.ListBlock lb)
+    private static ListBlock MapListBlock(Markdig.Syntax.ListBlock lb, int paragraphIndex)
     {
         var kind = lb.IsOrdered ? ListKind.Numbered : ListKind.Bulleted;
         var items = lb
             .OfType<ListItemBlock>()
             .Select((lib, index) => MapListItem(lib, kind, index + 1))
             .ToList();
-        return new ListBlock(kind, items);
+        return new ListBlock(kind, items, paragraphIndex);
     }
 
     private static ListItem MapListItem(ListItemBlock lib, ListKind kind, int index)
@@ -132,7 +137,7 @@ public static class MarkdownParser
             .Select(p => ExtractInlineText(p.Inline))
             .FirstOrDefault() ?? string.Empty;
 
-        var mappedSubList = subList is not null ? MapListBlock(subList) : null;
+        var mappedSubList = subList is not null ? MapListBlock(subList, 1) : null;
         return new ListItem(textContent, kind, index, mappedSubList);
     }
 

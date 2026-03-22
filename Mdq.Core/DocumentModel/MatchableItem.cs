@@ -48,13 +48,13 @@ public enum ListKind
     Numbered
 }
 
-public abstract record Paragraph : MatchableItem;
+public abstract record Paragraph(int Index) : MatchableItem;
 
-public sealed record TextBlock(string Content) : Paragraph;
+public sealed record TextBlock(string Content, int Index) : Paragraph(Index);
 
-public sealed record ListBlock(ListKind Kind, IReadOnlyList<ListItem> Items) : Paragraph;
+public sealed record ListBlock(ListKind Kind, IReadOnlyList<ListItem> Items, int Index) : Paragraph(Index);
 
-public sealed record BlockQuote(string Content) : Paragraph;
+public sealed record BlockQuote(string Content, int Index) : Paragraph(Index);
 
 public record ListItem(
     string Content,

@@ -23,10 +23,6 @@ public static class QueryExecutor
             .MapError(e => (MdqError)e);
     }
 
-    // -------------------------------------------------------------------------
-    // Segment dispatch
-    // -------------------------------------------------------------------------
-
     /// <summary>
     /// Processes segments starting at <paramref name="segmentIndex"/> against a list of
     /// candidate sections at <paramref name="currentLevel"/>.
@@ -41,10 +37,10 @@ public static class QueryExecutor
             current = selector switch
             {
                 SelectorSegment.Heading h => ResolveHeading(h, current),
-                SelectorSegment.Text => ResolveText(current),
-                SelectorSegment.HeadingContent => ResolveHeadingContent(current),
-                SelectorSegment.ParagraphAt p => ResolveParagraph(p, current),
-                SelectorSegment.ItemAt item => ResolveItem(item, current),
+                SelectorSegment.Text => ResolveDotText(current),
+                SelectorSegment.HeadingContent => ResolveDotHeading(current),
+                SelectorSegment.ParagraphAt p => ResolveDotParagraphN(p, current),
+                SelectorSegment.ItemAt item => ResolveDotItemN(item, current),
                 _ => throw new Exception($"Unknown selector type: {selector.GetType().Name}")
             };
             if (current.Count == 0)
@@ -73,16 +69,15 @@ public static class QueryExecutor
     // .text
     // -------------------------------------------------------------------------
 
-    private static List<MatchableItem> ResolveText(List<MatchableItem> items)
+    private static List<MatchableItem> ResolveDotText(List<MatchableItem> items)
     {
         return items
             .SelectMany(i => i switch
             {
-                Section s => s.Paragraphs,
-                Paragraph p => [p],
+                MarkdownDocument md => md.Sections[0].Paragraphs.Cast<MatchableItem>(),
+                Section s => s.Paragraphs.Cast<MatchableItem>(),
                 _ => []
             })
-            .Cast<MatchableItem>()
             .ToList();
     }
 
@@ -90,7 +85,7 @@ public static class QueryExecutor
     // .heading
     // -------------------------------------------------------------------------
 
-    private static List<MatchableItem> ResolveHeadingContent(List<MatchableItem> items)
+    private static List<MatchableItem> ResolveDotHeading(List<MatchableItem> items)
         => items.OfType<Section>()
             .Select(s => s.Heading)
             .Cast<MatchableItem>()
@@ -100,14 +95,17 @@ public static class QueryExecutor
     // .paragraph(N)
     // -------------------------------------------------------------------------
 
-    private static List<MatchableItem> ResolveParagraph(
+    private static List<MatchableItem> ResolveDotParagraphN(
         SelectorSegment.ParagraphAt paragraphSeg,
         List<MatchableItem> items)
     {
-        // TODO: This all goes much nicer if paragraphs have their own index information.
-        // Because then we can match Section.Paragraph[n] AND any Paragraph items already in the matchlist with Index N
-        return items.OfType<Section>()
-            .SelectMany(s => s.Paragraphs.Skip(paragraphSeg.Index - 1).Take(1).Cast<MatchableItem>())
+        return items
+            .SelectMany(i => i switch
+            {
+                Section s => s.Paragraphs.Where(p => p.Index == paragraphSeg.Index),
+                _ => []
+            })
+            .Cast<MatchableItem>()
             .ToList();
     }
 
@@ -115,7 +113,7 @@ public static class QueryExecutor
     // .item(N)
     // -------------------------------------------------------------------------
 
-    private static List<MatchableItem> ResolveItem(
+    private static List<MatchableItem> ResolveDotItemN(
         SelectorSegment.ItemAt itemSeg,
         List<MatchableItem> items)
     {

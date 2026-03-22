@@ -54,12 +54,12 @@ public class QueryExecutorTests
 
     private static Section SimpleSection(string heading, int level, params string[] paragraphTexts) =>
         new(new Heading(heading, level),
-            paragraphTexts.Select(t => (Paragraph)new TextBlock(t)).ToList(),
+            paragraphTexts.Select(t => (Paragraph)new TextBlock(t, 1)).ToList(),
             []);
 
     private static Section SectionWithChildren(string heading, int level, Section[] children, params string[] paragraphTexts) =>
         new(new Heading(heading, level),
-            paragraphTexts.Select(t => (Paragraph)new TextBlock(t)).ToList(),
+            paragraphTexts.Select(t => (Paragraph)new TextBlock(t, 1)).ToList(),
             children.ToList());
 
     private static Section SectionWithParagraphs(string heading, int level, IReadOnlyList<Paragraph> paragraphs) =>
@@ -248,9 +248,9 @@ public class QueryExecutorTests
     {
         var paragraphs = new List<Paragraph>
         {
-            new TextBlock("First."),
-            new TextBlock("Second."),
-            new TextBlock("Third.")
+            new TextBlock("First.", 1),
+            new TextBlock("Second.", 2),
+            new TextBlock("Third.", 3)
         };
         var doc = DocWithSections(SectionWithParagraphs("Section", 1, paragraphs));
 
@@ -272,7 +272,7 @@ public class QueryExecutorTests
             new("Beta", ListKind.Bulleted, 2, null),
             new("Gamma", ListKind.Bulleted, 3, null)
         };
-        var listBlock = new ListBlock(ListKind.Bulleted, items);
+        var listBlock = new ListBlock(ListKind.Bulleted, items, 1);
         var doc = DocWithSections(SectionWithParagraphs("List Section", 1, [listBlock]));
 
         ExecuteOk(doc, "#List Section.paragraph(1).item(1)")[0].Should().BeOfType<ListItem>().Which.Content.Should().Be("Alpha");
@@ -292,13 +292,13 @@ public class QueryExecutorTests
             new("Sub-Alpha", ListKind.Bulleted, 1, null),
             new("Sub-Beta", ListKind.Bulleted, 2, null)
         };
-        var subList = new ListBlock(ListKind.Bulleted, subItems);
+        var subList = new ListBlock(ListKind.Bulleted, subItems, 1);
         var items = new List<ListItem>
         {
             new("Parent item", ListKind.Bulleted, 1, subList),
             new("Other item", ListKind.Bulleted, 2, null)
         };
-        var listBlock = new ListBlock(ListKind.Bulleted, items);
+        var listBlock = new ListBlock(ListKind.Bulleted, items, 1);
         var doc = DocWithSections(SectionWithParagraphs("Section", 1, [listBlock]));
 
         var result = ExecuteOk(doc, "#Section.paragraph(1).item(1).item(2)");
@@ -354,7 +354,7 @@ public class QueryExecutorTests
     public void Execute_ItemOutOfRange_ReturnsItemOutOfRangeError()
     {
         var items = new List<ListItem> { new("Only item", ListKind.Bulleted, 1, null) };
-        var listBlock = new ListBlock(ListKind.Bulleted, items);
+        var listBlock = new ListBlock(ListKind.Bulleted, items, 1);
         var doc = DocWithSections(SectionWithParagraphs("Section", 1, [listBlock]));
 
         ExecuteOkEmpty(doc, "#Section.paragraph(1).item(3)");
@@ -395,7 +395,7 @@ public class QueryExecutorTests
     public void Execute_EmptyChain_RendersBulletedList()
     {
         var items = new List<ListItem> { new("A", ListKind.Bulleted, 1, null), new("B", ListKind.Bulleted, 2, null) };
-        var listBlock = new ListBlock(ListKind.Bulleted, items);
+        var listBlock = new ListBlock(ListKind.Bulleted, items, 1);
         var doc = DocWithSections(SectionWithParagraphs("Section", 1, [listBlock]));
 
         var result = ExecuteOk(doc, "");
@@ -411,7 +411,7 @@ public class QueryExecutorTests
     public void Execute_EmptyChain_RendersNumberedList()
     {
         var items = new List<ListItem> { new("First", ListKind.Numbered, 1, null), new("Second", ListKind.Numbered, 2, null) };
-        var listBlock = new ListBlock(ListKind.Numbered, items);
+        var listBlock = new ListBlock(ListKind.Numbered, items, 1);
         var doc = DocWithSections(SectionWithParagraphs("Section", 1, [listBlock]));
 
         var result = ExecuteOk(doc, "");
@@ -426,7 +426,7 @@ public class QueryExecutorTests
     [Test]
     public void Execute_EmptyChain_RendersBlockQuote()
     {
-        var bq = new BlockQuote("Quoted text.");
+        var bq = new BlockQuote("Quoted text.", 1);
         var doc = DocWithSections(SectionWithParagraphs("Section", 1, [bq]));
 
         var result = ExecuteOk(doc, "");
