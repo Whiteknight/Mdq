@@ -2,7 +2,6 @@
 
 A short summary of the feature
 
-
 Rule: Get an entire section by heading name
 
     Background: 

@@ -1,42 +1,42 @@
 namespace Mdq.Core.SelectorModel;
 
-public abstract record SelectorSegment
+public abstract record Selector
 {
-    public static SelectorSegment PoundHeading(string name) => new Heading(name);
-    public static SelectorSegment DotText() => new Text();
-    public static SelectorSegment DotHeading() => new HeadingContent();
-    public static SelectorSegment DotParagraphParenIndex(int index) => new ParagraphAt(index);
-    public static SelectorSegment DotItemParenIndex(int index) => new ItemAt(index);
-    public static SelectorSegment ErrorMessage(string message) => new Error(message);
+    public static Selector PoundHeading(string name) => new Heading(name);
+    public static Selector DotText() => new Text();
+    public static Selector DotHeading() => new HeadingContent();
+    public static Selector DotParagraphParenIndex(int index) => new ParagraphAt(index);
+    public static Selector DotItemParenIndex(int index) => new ItemAt(index);
+    public static Selector ErrorMessage(string message) => new Error(message);
 
-    public sealed record Error(string Message) : SelectorSegment;
+    public sealed record Error(string Message) : Selector;
 
     /// <summary>#Name -- navigate into a section by heading text.</summary>
-    public sealed record Heading(string Name) : SelectorSegment
+    public sealed record Heading(string Name) : Selector
     {
         public override string ToString() => $"#{Name}";
     }
 
     /// <summary>.text -- body content of the current section, excluding the heading line.</summary>
-    public sealed record Text : SelectorSegment
+    public sealed record Text : Selector
     {
         public override string ToString() => ".text";
     }
 
     /// <summary>.heading -- heading text of the current section, without # prefix characters.</summary>
-    public sealed record HeadingContent : SelectorSegment
+    public sealed record HeadingContent : Selector
     {
         public override string ToString() => ".heading";
     }
 
     /// <summary>.paragraph(N) -- Nth paragraph (1-indexed) within the current section.</summary>
-    public sealed record ParagraphAt(int Index) : SelectorSegment
+    public sealed record ParagraphAt(int Index) : Selector
     {
         public override string ToString() => $".paragraph({Index})";
     }
 
     /// <summary>.item(N) -- Nth list item (1-indexed) within the current list or sub-list.</summary>
-    public sealed record ItemAt(int Index) : SelectorSegment
+    public sealed record ItemAt(int Index) : Selector
     {
         public override string ToString() => $".item({Index})";
     }

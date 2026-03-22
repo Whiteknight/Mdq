@@ -51,7 +51,7 @@ public static class SelectorParser
 
         var chain = parseResult.GetValueOrDefault(null!);
 
-        var errors = chain.Segments.OfType<SelectorSegment.Error>();
+        var errors = chain.Segments.OfType<Selector.Error>();
         if (errors.Any())
             return new SelectorParseError(string.Join(", ", errors.Select(e => e.Message)), 0);
 
@@ -62,9 +62,9 @@ public static class SelectorParser
     {
         var poundHeading = GetPoundHeadingParser();
 
-        var dotText = Match(".text").Map(_ => SelectorSegment.DotText());
+        var dotText = Match(".text").Map(_ => Selector.DotText());
 
-        var dotHeading = Match(".heading").Map(_ => SelectorSegment.DotHeading());
+        var dotHeading = Match(".heading").Map(_ => Selector.DotHeading());
         var dotParagraph = GetDotParagraphParser();
         var dotItemAt = GetDotItemParser();
         var dotUnknown = GetDotUnknownParser();
@@ -83,52 +83,52 @@ public static class SelectorParser
             (sc, _) => sc);
     }
 
-    private static IParser<char, SelectorSegment> GetDotUnknownParser()
+    private static IParser<char, Selector> GetDotUnknownParser()
         => Capture(
             MatchChar('.'),
             Match(c => c != '#' && c != '.').ListCharToString())
-            .Map(c => SelectorSegment.ErrorMessage($"Unknown selector '{new string(c)}'"));
+            .Map(c => Selector.ErrorMessage($"Unknown selector '{new string(c)}'"));
 
-    private static IParser<char, SelectorSegment> GetDotItemParser()
+    private static IParser<char, Selector> GetDotItemParser()
         => Rule(
             Match(".item("),
             // Once we have '.item(', we MUST have a positive integer and a ')' or else we get some kind of error
             First(
                 Rule(
                     DigitsAsInteger(1, 5).Map(i => i > 0
-                        ? SelectorSegment.DotItemParenIndex(i)
-                        : SelectorSegment.ErrorMessage("Numeric value must be non-zero positive")),
+                        ? Selector.DotItemParenIndex(i)
+                        : Selector.ErrorMessage("Numeric value must be non-zero positive")),
                     MatchChar(')'),
                     (d, _) => d),
                 Rule(
-                    MatchChar(c => c != ')').ListCharToString().Map(v => SelectorSegment.ErrorMessage($"Expected positive numeric index and ')' but found '{v}'")),
+                    MatchChar(c => c != ')').ListCharToString().Map(v => Selector.ErrorMessage($"Expected positive numeric index and ')' but found '{v}'")),
                     MatchChar(')').Optional(),
                     (x, _) => x)
             ),
             (_, n) => n);
 
-    private static IParser<char, SelectorSegment> GetDotParagraphParser()
+    private static IParser<char, Selector> GetDotParagraphParser()
         => Rule(
             Match(".paragraph("),
             // Once we have '.paragraph(', we MUST have a positive integer and a ')' or else we get some kind of error
             First(
                 Rule(
                     DigitsAsInteger(1, 5).Map(i => i > 0
-                        ? SelectorSegment.DotParagraphParenIndex(i)
-                        : SelectorSegment.ErrorMessage("Numeric value must be non-zero positive")),
+                        ? Selector.DotParagraphParenIndex(i)
+                        : Selector.ErrorMessage("Numeric value must be non-zero positive")),
                     MatchChar(')'),
                     (d, _) => d),
                 Rule(
-                    MatchChar(c => c != ')').ListCharToString().Map(v => SelectorSegment.ErrorMessage($"Expected positive numeric index and ')' but found '{v}'")),
+                    MatchChar(c => c != ')').ListCharToString().Map(v => Selector.ErrorMessage($"Expected positive numeric index and ')' but found '{v}'")),
                     MatchChar(')').Optional(),
                     (x, _) => x)
             ),
             (_, n) => n);
 
-    private static IParser<char, SelectorSegment> GetPoundHeadingParser()
+    private static IParser<char, Selector> GetPoundHeadingParser()
         => Rule(
             MatchChar('#'),
             // TODO: Probably need a way to escape # and . characters
             MatchChar(c => c != '#' && c != '.').ListCharToString().Optional(() => string.Empty),
-            (_, name) => SelectorSegment.PoundHeading(name.Trim()));
+            (_, name) => Selector.PoundHeading(name.Trim()));
 }

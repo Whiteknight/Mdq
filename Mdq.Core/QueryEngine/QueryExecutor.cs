@@ -29,18 +29,18 @@ public static class QueryExecutor
     /// </summary>
     private static Result<List<MatchableItem>, QueryError> ExecuteSegments(
         IEnumerable<MatchableItem> items,
-        IReadOnlyList<SelectorSegment> selectors)
+        IReadOnlyList<Selector> selectors)
     {
         var current = items.ToList();
         foreach (var selector in selectors)
         {
             current = selector switch
             {
-                SelectorSegment.Heading h => ResolvePoundHeading(h, current),
-                SelectorSegment.Text => ResolveDotText(current),
-                SelectorSegment.HeadingContent => ResolveDotHeading(current),
-                SelectorSegment.ParagraphAt p => ResolveDotParagraphN(p, current),
-                SelectorSegment.ItemAt item => ResolveDotItemN(item, current),
+                Selector.Heading h => ResolvePoundHeading(h, current),
+                Selector.Text => ResolveDotText(current),
+                Selector.HeadingContent => ResolveDotHeading(current),
+                Selector.ParagraphAt p => ResolveDotParagraphN(p, current),
+                Selector.ItemAt item => ResolveDotItemN(item, current),
                 _ => throw new Exception($"Unknown selector type: {selector.GetType().Name}")
             };
             if (current.Count == 0)
@@ -51,7 +51,7 @@ public static class QueryExecutor
     }
 
     private static List<MatchableItem> ResolvePoundHeading(
-        SelectorSegment.Heading selector,
+        Selector.Heading selector,
         List<MatchableItem> items)
     {
         return items
@@ -98,7 +98,7 @@ public static class QueryExecutor
     // -------------------------------------------------------------------------
 
     private static List<MatchableItem> ResolveDotParagraphN(
-        SelectorSegment.ParagraphAt paragraphSeg,
+        Selector.ParagraphAt paragraphSeg,
         List<MatchableItem> items)
     {
         return items
@@ -117,7 +117,7 @@ public static class QueryExecutor
     // -------------------------------------------------------------------------
 
     private static List<MatchableItem> ResolveDotItemN(
-        SelectorSegment.ItemAt itemSeg,
+        Selector.ItemAt itemSeg,
         List<MatchableItem> items)
     {
         return items

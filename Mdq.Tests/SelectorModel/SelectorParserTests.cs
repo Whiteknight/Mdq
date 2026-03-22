@@ -56,7 +56,7 @@ public class SelectorParserTests
         var chain = ParseOk("#Introduction");
 
         chain.Segments.Should().HaveCount(1);
-        chain.Segments[0].Should().BeOfType<SM.SelectorSegment.Heading>()
+        chain.Segments[0].Should().BeOfType<SM.Selector.Heading>()
             .Which.Name.Should().Be("Introduction");
     }
 
@@ -67,7 +67,7 @@ public class SelectorParserTests
         var chain = ParseOk("# Introduction ");
 
         chain.Segments.Should().HaveCount(1);
-        chain.Segments[0].Should().BeOfType<SM.SelectorSegment.Heading>()
+        chain.Segments[0].Should().BeOfType<SM.Selector.Heading>()
             .Which.Name.Should().Be("Introduction");
     }
 
@@ -77,7 +77,7 @@ public class SelectorParserTests
         var chain = ParseOk("#");
 
         chain.Segments.Should().HaveCount(1);
-        chain.Segments[0].Should().BeOfType<SM.SelectorSegment.Heading>()
+        chain.Segments[0].Should().BeOfType<SM.Selector.Heading>()
             .Which.Name.Should().Be("");
     }
 
@@ -91,9 +91,9 @@ public class SelectorParserTests
         var chain = ParseOk("#Chapter#Section");
 
         chain.Segments.Should().HaveCount(2);
-        chain.Segments[0].Should().BeOfType<SM.SelectorSegment.Heading>()
+        chain.Segments[0].Should().BeOfType<SM.Selector.Heading>()
             .Which.Name.Should().Be("Chapter");
-        chain.Segments[1].Should().BeOfType<SM.SelectorSegment.Heading>()
+        chain.Segments[1].Should().BeOfType<SM.Selector.Heading>()
             .Which.Name.Should().Be("Section");
     }
 
@@ -103,9 +103,9 @@ public class SelectorParserTests
         var chain = ParseOk("#A#B#C");
 
         chain.Segments.Should().HaveCount(3);
-        chain.Segments[0].Should().BeOfType<SM.SelectorSegment.Heading>().Which.Name.Should().Be("A");
-        chain.Segments[1].Should().BeOfType<SM.SelectorSegment.Heading>().Which.Name.Should().Be("B");
-        chain.Segments[2].Should().BeOfType<SM.SelectorSegment.Heading>().Which.Name.Should().Be("C");
+        chain.Segments[0].Should().BeOfType<SM.Selector.Heading>().Which.Name.Should().Be("A");
+        chain.Segments[1].Should().BeOfType<SM.Selector.Heading>().Which.Name.Should().Be("B");
+        chain.Segments[2].Should().BeOfType<SM.Selector.Heading>().Which.Name.Should().Be("C");
     }
 
     [Test]
@@ -114,9 +114,9 @@ public class SelectorParserTests
         var chain = ParseOk("##Section");
 
         chain.Segments.Should().HaveCount(2);
-        chain.Segments[0].Should().BeOfType<SM.SelectorSegment.Heading>()
+        chain.Segments[0].Should().BeOfType<SM.Selector.Heading>()
             .Which.Name.Should().Be("");
-        chain.Segments[1].Should().BeOfType<SM.SelectorSegment.Heading>()
+        chain.Segments[1].Should().BeOfType<SM.Selector.Heading>()
             .Which.Name.Should().Be("Section");
     }
 
@@ -126,9 +126,9 @@ public class SelectorParserTests
         var chain = ParseOk("#.text");
 
         chain.Segments.Should().HaveCount(2);
-        chain.Segments[0].Should().BeOfType<SM.SelectorSegment.Heading>()
+        chain.Segments[0].Should().BeOfType<SM.Selector.Heading>()
             .Which.Name.Should().Be("");
-        chain.Segments[1].Should().BeOfType<SM.SelectorSegment.Text>();
+        chain.Segments[1].Should().BeOfType<SM.Selector.Text>();
     }
 
     // -------------------------------------------------------------------------
@@ -141,8 +141,8 @@ public class SelectorParserTests
         var chain = ParseOk("#Intro.text");
 
         chain.Segments.Should().HaveCount(2);
-        chain.Segments[0].Should().BeOfType<SM.SelectorSegment.Heading>();
-        chain.Segments[1].Should().BeOfType<SM.SelectorSegment.Text>();
+        chain.Segments[0].Should().BeOfType<SM.Selector.Heading>();
+        chain.Segments[1].Should().BeOfType<SM.Selector.Text>();
     }
 
     [Test]
@@ -151,7 +151,7 @@ public class SelectorParserTests
         var chain = ParseOk(".text");
 
         chain.Segments.Should().HaveCount(1);
-        chain.Segments[0].Should().BeOfType<SM.SelectorSegment.Text>();
+        chain.Segments[0].Should().BeOfType<SM.Selector.Text>();
     }
 
     // -------------------------------------------------------------------------
@@ -164,7 +164,7 @@ public class SelectorParserTests
         var chain = ParseOk("#Intro.heading");
 
         chain.Segments.Should().HaveCount(2);
-        chain.Segments[1].Should().BeOfType<SM.SelectorSegment.HeadingContent>();
+        chain.Segments[1].Should().BeOfType<SM.Selector.HeadingContent>();
     }
 
     // -------------------------------------------------------------------------
@@ -177,7 +177,7 @@ public class SelectorParserTests
         var chain = ParseOk("#Intro.paragraph(3)");
 
         chain.Segments.Should().HaveCount(2);
-        chain.Segments[1].Should().BeOfType<SM.SelectorSegment.ParagraphAt>()
+        chain.Segments[1].Should().BeOfType<SM.Selector.ParagraphAt>()
             .Which.Index.Should().Be(3);
     }
 
@@ -187,7 +187,7 @@ public class SelectorParserTests
         var chain = ParseOk(".paragraph(1)");
 
         chain.Segments.Should().HaveCount(1);
-        chain.Segments[0].Should().BeOfType<SM.SelectorSegment.ParagraphAt>()
+        chain.Segments[0].Should().BeOfType<SM.Selector.ParagraphAt>()
             .Which.Index.Should().Be(1);
     }
 
@@ -201,7 +201,7 @@ public class SelectorParserTests
         var chain = ParseOk("#List.paragraph(1).item(2)");
 
         chain.Segments.Should().HaveCount(3);
-        chain.Segments[2].Should().BeOfType<SM.SelectorSegment.ItemAt>()
+        chain.Segments[2].Should().BeOfType<SM.Selector.ItemAt>()
             .Which.Index.Should().Be(2);
     }
 
@@ -215,8 +215,8 @@ public class SelectorParserTests
         var chain = ParseOk(".item(1).item(3)");
 
         chain.Segments.Should().HaveCount(2);
-        chain.Segments[0].Should().BeOfType<SM.SelectorSegment.ItemAt>().Which.Index.Should().Be(1);
-        chain.Segments[1].Should().BeOfType<SM.SelectorSegment.ItemAt>().Which.Index.Should().Be(3);
+        chain.Segments[0].Should().BeOfType<SM.Selector.ItemAt>().Which.Index.Should().Be(1);
+        chain.Segments[1].Should().BeOfType<SM.Selector.ItemAt>().Which.Index.Should().Be(3);
     }
 
     // -------------------------------------------------------------------------
