@@ -61,6 +61,7 @@ public static class SelectorParser
 
     private static IParser<char, SelectorChain> GetSelectorChainParser()
     {
+        var ows = OptionalWhitespace();
         var poundHeading = GetPoundHeadingParser();
 
         var dotText = Match(".text").Map(_ => Selector.DotText());
@@ -85,7 +86,7 @@ public static class SelectorParser
             dotUnknown);
 
         return Rule(
-            selector.List(1).Map(l => new SelectorChain(l)),
+            selector.List(ows, 1).Map(l => new SelectorChain(l)),
             End(),
             (sc, _) => sc);
     }

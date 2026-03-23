@@ -7,7 +7,6 @@ public abstract record MatchableItem
     public abstract bool IsMatch(string property, string op, string value);
 }
 
-// TODO: A document can contain paragraphs ahead of any section.
 public record MarkdownDocument(IReadOnlyList<Section> Sections) : MatchableItem
 {
     public override bool IsMatch(string property, string op, string value)
