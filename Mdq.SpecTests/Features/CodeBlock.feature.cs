@@ -105,7 +105,7 @@ namespace Mdq.SpecTests.Features
         
         private static global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages InitializeCucumberMessages()
         {
-            return new global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages("Features/CodeBlock.feature.ndjson", 8);
+            return new global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages("Features/CodeBlock.feature.ndjson", 9);
         }
         
         [global::NUnit.Framework.TestAttribute()]
@@ -313,6 +313,40 @@ namespace Mdq.SpecTests.Features
 #line hidden
 #line 94
         await testRunner.ThenAsync("The result text should be:", "var thirdCodeBlock = FencedWithLanguage(\r\n    \"csharp\"\r\n);", ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [global::NUnit.Framework.TestAttribute()]
+        [global::NUnit.Framework.DescriptionAttribute("I can filter by language")]
+        public async global::System.Threading.Tasks.Task ICanFilterByLanguage()
+        {
+            string[] tagsOfScenario = ((string[])(null));
+            global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
+            string pickleIndex = "6";
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("I can filter by language", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
+            string[] tagsOfRule = ((string[])(null));
+            global::Reqnroll.RuleInfo ruleInfo = new global::Reqnroll.RuleInfo("Filter by language", null, tagsOfRule);
+#line 119
+    this.ScenarioInitialize(scenarioInfo, ruleInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                await testRunner.SkipScenarioAsync();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 104
+        await testRunner.GivenAsync("I have markdown text:", "```csharp\r\ncsharp code\r\n```\r\n\r\n```bash\r\nbash code\r\n```\r\n\r\n```other\r\nother code\r\n`" +
+                        "``", ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 120
+        await testRunner.WhenAsync("I execute selector \".text[lang=bash]\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 121
+        await testRunner.ThenAsync("The result text should be:", "```bash\r\nbash code\r\n```", ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();

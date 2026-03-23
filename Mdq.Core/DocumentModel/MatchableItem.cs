@@ -96,7 +96,13 @@ public sealed record BlockQuote(string Content, int Index) : Paragraph(Index)
 public sealed record CodeBlock(string? Language, string Content, int Index) : Paragraph(Index)
 {
     public override bool IsMatch(string property, string op, string value)
-        => false;
+    {
+        return (property, op, value) switch
+        {
+            ("lang", "=", _) => (string.IsNullOrEmpty(Language) && string.IsNullOrEmpty(value)) || value.Equals(Language, StringComparison.OrdinalIgnoreCase),
+            _ => false
+        };
+    }
 }
 
 public record ListItem(

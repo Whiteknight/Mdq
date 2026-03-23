@@ -97,3 +97,30 @@ Rule: Get code block raw
                 "csharp"
             );
             """
+
+Rule: Filter by language
+
+    Background: 
+        Given I have markdown text:
+            """
+            ```csharp
+            csharp code
+            ```
+
+            ```bash
+            bash code
+            ```
+
+            ```other
+            other code
+            ```
+            """
+
+    Scenario: I can filter by language
+        When I execute selector ".text[lang=bash]"
+        Then The result text should be:
+            """
+            ```bash
+            bash code
+            ```
+            """
