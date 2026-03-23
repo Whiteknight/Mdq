@@ -7,7 +7,9 @@ public abstract record Selector
     public static Selector DotHeading() => new HeadingContent();
     public static Selector DotParagraphParenIndex(int index) => new ParagraphAt(index);
     public static Selector DotItemParenIndex(int index) => new ItemAt(index);
+    public static Selector DotItems() => new Items();
     public static Selector ErrorMessage(string message) => new Error(message);
+    public static Selector FilterBlock(string property, string op, string value) => new Filter(property, op, value);
 
     public sealed record Error(string Message) : Selector;
 
@@ -39,5 +41,15 @@ public abstract record Selector
     public sealed record ItemAt(int Index) : Selector
     {
         public override string ToString() => $".item({Index})";
+    }
+
+    public sealed record Filter(string Property, string Operator, string Value) : Selector
+    {
+        public override string ToString() => $"[{Property}{Operator}{Value}]";
+    }
+
+    public sealed record Items() : Selector
+    {
+        public override string ToString() => ".items";
     }
 }

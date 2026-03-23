@@ -2,10 +2,17 @@ using System.Text.RegularExpressions;
 
 namespace Mdq.Core.DocumentModel;
 
-public abstract record MatchableItem;
+public abstract record MatchableItem
+{
+    public abstract bool IsMatch(string property, string op, string value);
+}
 
 // TODO: A document can contain paragraphs ahead of any section.
-public record MarkdownDocument(IReadOnlyList<Section> Sections) : MatchableItem;
+public record MarkdownDocument(IReadOnlyList<Section> Sections) : MatchableItem
+{
+    public override bool IsMatch(string property, string op, string value)
+        => false;
+}
 
 public record Heading(string? Text, int Level) : MatchableItem
 {
@@ -26,6 +33,9 @@ public record Heading(string? Text, int Level) : MatchableItem
         return new Regex(regexString, RegexOptions.IgnoreCase | RegexOptions.Singleline)
             .IsMatch(Text ?? string.Empty);
     }
+
+    public override bool IsMatch(string property, string op, string value)
+        => false;
 }
 
 public record Section(
@@ -45,6 +55,9 @@ public record Section(
 
         return string.Join("\n\n", parts);
     }
+
+    public override bool IsMatch(string property, string op, string value)
+        => false;
 }
 
 public enum ListKind
@@ -55,16 +68,54 @@ public enum ListKind
 
 public abstract record Paragraph(int Index) : MatchableItem;
 
-public sealed record TextBlock(string Content, int Index) : Paragraph(Index);
+public sealed record TextBlock(string Content, int Index) : Paragraph(Index)
+{
+    public override bool IsMatch(string property, string op, string value)
+        => false;
+}
 
-public sealed record ListBlock(ListKind Kind, IReadOnlyList<ListItem> Items, int Index) : Paragraph(Index);
+public sealed record ListBlock(ListKind Kind, IReadOnlyList<ListItem> Items, int Index) : Paragraph(Index)
+{
+    public override bool IsMatch(string property, string op, string value)
+    {
+        return (property, op, value) switch
+        {
+            ("kind", "=", "bullet") => Kind == ListKind.Bulleted,
+            ("kind", "=", "numbered") => Kind == ListKind.Numbered,
+            _ => false
+        };
+    }
+}
 
-public sealed record BlockQuote(string Content, int Index) : Paragraph(Index);
+public sealed record BlockQuote(string Content, int Index) : Paragraph(Index)
+{
+    public override bool IsMatch(string property, string op, string value)
+        => false;
+}
 
-public sealed record CodeBlock(string? Language, string Content, int Index) : Paragraph(Index);
+public sealed record CodeBlock(string? Language, string Content, int Index) : Paragraph(Index)
+{
+    public override bool IsMatch(string property, string op, string value)
+        => false;
+}
 
 public record ListItem(
     string Content,
     ListKind Kind,
     int Index,
-    ListBlock? SubList) : MatchableItem;
+    ListBlock? SubList) : MatchableItem
+{
+    public override bool IsMatch(string property, string op, string value)
+    {
+        return (property, op, value) switch
+        {
+            ("checkable", _, "true") => Content.StartsWith("[ ]") || Content.StartsWith("[x]"),
+            ("checkable", _, "false") => !Content.StartsWith("[ ]") && !Content.StartsWith("[x]"),
+            ("checked", _, "true") => Content.StartsWith("[x]"),
+            ("checked", _, "false") => !Content.StartsWith("[x]"),
+            ("optional", _, "true") => Content.StartsWith("[ ]*") || Content.StartsWith("[x]*"),
+            ("optional", _, "false") => !Content.StartsWith("[ ]*") && !Content.StartsWith("[x]*"),
+            _ => false
+        };
+    }
+}

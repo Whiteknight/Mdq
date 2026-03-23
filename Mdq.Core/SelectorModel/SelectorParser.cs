@@ -1,6 +1,7 @@
 using Mdq.Core.Shared;
 using ParserObjects;
 using static ParserObjects.Parsers;
+using static ParserObjects.Parsers.C;
 using static ParserObjects.Parsers<char>;
 
 namespace Mdq.Core.SelectorModel;
@@ -65,9 +66,13 @@ public static class SelectorParser
         var dotText = Match(".text").Map(_ => Selector.DotText());
 
         var dotHeading = Match(".heading").Map(_ => Selector.DotHeading());
+
+        var dotItems = Match(".items").Map(_ => Selector.DotItems());
+
         var dotParagraph = GetDotParagraphParser();
         var dotItemAt = GetDotItemParser();
         var dotUnknown = GetDotUnknownParser();
+        var filterBlock = GetFilterParser();
 
         var selector = First(
             poundHeading,
@@ -75,6 +80,8 @@ public static class SelectorParser
             dotHeading,
             dotParagraph,
             dotItemAt,
+            dotItems,
+            filterBlock,
             dotUnknown);
 
         return Rule(
@@ -131,4 +138,13 @@ public static class SelectorParser
             // TODO: Probably need a way to escape # and . characters
             MatchChar(c => c != '#' && c != '.').ListCharToString().Optional(() => string.Empty),
             (_, name) => Selector.PoundHeading(name.Trim()));
+
+    private static IParser<char, Selector> GetFilterParser()
+        => Rule(
+            MatchChar('['),
+            Identifier(),
+            MatchChar('='),
+            MatchChar(c => c != ']').ListCharToString(),
+            MatchChar(']'),
+            (_, property, op, value, _) => Selector.FilterBlock(property, op.ToString(), value));
 }

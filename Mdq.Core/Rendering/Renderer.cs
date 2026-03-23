@@ -22,10 +22,14 @@ public static class Renderer
             return;
 
         RenderItem(items[0], sb);
+        var lastItem = items[0];
         foreach (var item in items.Skip(1))
         {
-            sb.AppendLine().AppendLine();
+            sb.AppendLine();
+            if (lastItem is Paragraph || lastItem is Section || lastItem is Heading)
+                sb.AppendLine();
             RenderItem(item, sb);
+            lastItem = item;
         }
     }
 
@@ -84,7 +88,7 @@ public static class Renderer
     {
         for (int i = 0; i < listBlock.Items.Count; i++)
         {
-            if (sb.Length > 0)
+            if (i > 0)
                 sb.AppendLine();
 
             var item = listBlock.Items[i];

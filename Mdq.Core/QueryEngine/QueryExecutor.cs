@@ -41,6 +41,8 @@ public static class QueryExecutor
                 Selector.HeadingContent => ResolveDotHeading(current),
                 Selector.ParagraphAt p => ResolveDotParagraphN(p, current),
                 Selector.ItemAt item => ResolveDotItemN(item, current),
+                Selector.Items => ResolveDotItems(current),
+                Selector.Filter f => ResolveFilter(f, current),
                 _ => throw new Exception($"Unknown selector type: {selector.GetType().Name}")
             };
             if (current.Count == 0)
@@ -114,7 +116,7 @@ public static class QueryExecutor
     }
 
     // -------------------------------------------------------------------------
-    // .item(N)
+    // .item(N) and .items
     // -------------------------------------------------------------------------
 
     private static List<MatchableItem> ResolveDotItemN(
@@ -130,5 +132,27 @@ public static class QueryExecutor
                 _ => []
             })
             .ToList();
+    }
+
+    private static List<MatchableItem> ResolveDotItems(
+        List<MatchableItem> items)
+    {
+        return items
+            .SelectMany(i => i switch
+            {
+                ListBlock lb => lb.Items.Cast<MatchableItem>(),
+                ListItem li => [li],
+                _ => []
+            })
+            .ToList();
+    }
+
+    // -------------------------------------------------------------------------
+    // [property=value]
+    // -------------------------------------------------------------------------
+
+    private static List<MatchableItem> ResolveFilter(Selector.Filter f, List<MatchableItem> current)
+    {
+        return current.Where(i => i.IsMatch(f.Property, f.Operator, f.Value)).ToList();
     }
 }
