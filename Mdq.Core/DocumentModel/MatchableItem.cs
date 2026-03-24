@@ -73,6 +73,7 @@ public record Section(
         return (property, op, value) switch
         {
             ("type", "=", "section") => true,
+            ("level", "=", _) => int.TryParse(value, out var parsed) && parsed == Heading.Level,
             _ => false
         };
     }
