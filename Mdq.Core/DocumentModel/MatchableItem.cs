@@ -10,7 +10,13 @@ public abstract record MatchableItem
 public record MarkdownDocument(IReadOnlyList<Section> Sections) : MatchableItem
 {
     public override bool IsMatch(string property, string op, string value)
-        => false;
+    {
+        return (property, op, value) switch
+        {
+            ("type", "=", "document") => true,
+            _ => false
+        };
+    }
 }
 
 public record Heading(string? Text, int Level) : MatchableItem
@@ -34,7 +40,14 @@ public record Heading(string? Text, int Level) : MatchableItem
     }
 
     public override bool IsMatch(string property, string op, string value)
-        => false;
+    {
+        return (property, op, value) switch
+        {
+            ("type", "=", "heading") => true,
+            ("level", "=", _) => int.TryParse(value, out var parsed) && parsed == Level,
+            _ => false
+        };
+    }
 }
 
 public record Section(
@@ -56,7 +69,13 @@ public record Section(
     }
 
     public override bool IsMatch(string property, string op, string value)
-        => false;
+    {
+        return (property, op, value) switch
+        {
+            ("type", "=", "section") => true,
+            _ => false
+        };
+    }
 }
 
 public enum ListKind
@@ -70,7 +89,13 @@ public abstract record Paragraph(int Index) : MatchableItem;
 public sealed record TextBlock(string Content, int Index) : Paragraph(Index)
 {
     public override bool IsMatch(string property, string op, string value)
-        => false;
+    {
+        return (property, op, value) switch
+        {
+            ("type", "=", "text") => true,
+            _ => false
+        };
+    }
 }
 
 public sealed record ListBlock(ListKind Kind, IReadOnlyList<ListItem> Items, int Index) : Paragraph(Index)
@@ -79,6 +104,7 @@ public sealed record ListBlock(ListKind Kind, IReadOnlyList<ListItem> Items, int
     {
         return (property, op, value) switch
         {
+            ("type", "=", "list") => true,
             ("kind", "=", "bullet") => Kind == ListKind.Bulleted,
             ("kind", "=", "numbered") => Kind == ListKind.Numbered,
             _ => false
@@ -89,7 +115,13 @@ public sealed record ListBlock(ListKind Kind, IReadOnlyList<ListItem> Items, int
 public sealed record BlockQuote(string Content, int Index) : Paragraph(Index)
 {
     public override bool IsMatch(string property, string op, string value)
-        => false;
+    {
+        return (property, op, value) switch
+        {
+            ("type", "=", "blockquote") => true,
+            _ => false
+        };
+    }
 }
 
 public sealed record CodeBlock(string? Language, string Content, int Index) : Paragraph(Index)
@@ -98,6 +130,7 @@ public sealed record CodeBlock(string? Language, string Content, int Index) : Pa
     {
         return (property, op, value) switch
         {
+            ("type", "=", "codeblock") => true,
             ("lang", "=", _) => (string.IsNullOrEmpty(Language) && string.IsNullOrEmpty(value)) || value.Equals(Language, StringComparison.OrdinalIgnoreCase),
             _ => false
         };
@@ -114,12 +147,13 @@ public record ListItem(
     {
         return (property, op, value) switch
         {
-            ("checkable", _, "true") => Content.StartsWith("[ ]") || Content.StartsWith("[x]"),
-            ("checkable", _, "false") => !Content.StartsWith("[ ]") && !Content.StartsWith("[x]"),
-            ("checked", _, "true") => Content.StartsWith("[x]"),
-            ("checked", _, "false") => !Content.StartsWith("[x]"),
-            ("optional", _, "true") => Content.StartsWith("[ ]*") || Content.StartsWith("[x]*"),
-            ("optional", _, "false") => !Content.StartsWith("[ ]*") && !Content.StartsWith("[x]*"),
+            ("type", "=", "listitem") => true,
+            ("checkable", "=", "true") => Content.StartsWith("[ ]") || Content.StartsWith("[x]"),
+            ("checkable", "=", "false") => !Content.StartsWith("[ ]") && !Content.StartsWith("[x]"),
+            ("checked", "=", "true") => Content.StartsWith("[x]"),
+            ("checked", "=", "false") => !Content.StartsWith("[x]"),
+            ("optional", "=", "true") => Content.StartsWith("[ ]*") || Content.StartsWith("[x]*"),
+            ("optional", "=", "false") => !Content.StartsWith("[ ]*") && !Content.StartsWith("[x]*"),
             _ => false
         };
     }

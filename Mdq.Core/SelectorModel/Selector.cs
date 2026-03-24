@@ -8,6 +8,7 @@ public abstract record Selector
     public static Selector DotParagraphParenIndex(int index) => new ParagraphAt(index);
     public static Selector DotItemParenIndex(int index) => new ItemAt(index);
     public static Selector DotItems() => new Items();
+    public static Selector DotFlatten() => new Flatten();
     public static Selector ErrorMessage(string message) => new Error(message);
     public static Selector FilterBlock(string property, string op, string value) => new Filter(property, op, value);
 
@@ -51,5 +52,10 @@ public abstract record Selector
     public sealed record Items() : Selector
     {
         public override string ToString() => ".items";
+    }
+
+    public sealed record Flatten() : Selector
+    {
+        public override string ToString() => ".flatten";
     }
 }

@@ -43,6 +43,7 @@ public static class QueryExecutor
                 Selector.ItemAt item => ResolveDotItemN(item, current),
                 Selector.Items => ResolveDotItems(current),
                 Selector.Filter f => ResolveFilter(f, current),
+                Selector.Flatten f => ResolveFlatten(f, current),
                 _ => throw new Exception($"Unknown selector type: {selector.GetType().Name}")
             };
             if (current.Count == 0)
@@ -81,6 +82,7 @@ public static class QueryExecutor
                 Heading h and { Text: { } } => [new TextBlock(h.Text, 1)],
                 ListItem li => [new TextBlock(li.Content, 1)],
                 CodeBlock cb => [new TextBlock(cb.Content, 1)],
+                // TODO: Should a Paragraph here (besides the CodeBlock) resolve to itself?
                 _ => []
             })
             .ToList();
@@ -145,6 +147,42 @@ public static class QueryExecutor
                 _ => []
             })
             .ToList();
+    }
+
+    // -------------------------------------------------------------------------
+    // .flatten
+    // -------------------------------------------------------------------------
+
+    private static List<MatchableItem> ResolveFlatten(Selector.Flatten f, List<MatchableItem> current)
+    {
+        return current
+            .SelectMany(Flatten)
+            .ToList();
+    }
+
+    private static IEnumerable<MatchableItem> Flatten(MatchableItem item)
+    {
+        switch (item)
+        {
+            case MarkdownDocument md:
+                return md.Sections.SelectMany(Flatten);
+
+            case Section s:
+                return (s.Heading?.Text != null ? [s.Heading] : Array.Empty<MatchableItem>())
+                    .Concat(s.Paragraphs.SelectMany(p => Flatten(p)))
+                    .Concat(s.Children.SelectMany(Flatten));
+
+            case ListBlock lb:
+                return lb.Items.SelectMany(Flatten);
+
+            case ListItem li:
+                return new MatchableItem[] { li }
+                    .Concat(li.SubList != null ? Flatten(li.SubList) : Array.Empty<MatchableItem>());
+
+            case MatchableItem mi:
+                return [mi];
+        }
+        return [];
     }
 
     // -------------------------------------------------------------------------

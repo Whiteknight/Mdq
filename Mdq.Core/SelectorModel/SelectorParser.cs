@@ -70,6 +70,8 @@ public static class SelectorParser
 
         var dotItems = Match(".items").Map(_ => Selector.DotItems());
 
+        var dotFlatten = Match(".flatten").Map(_ => Selector.DotFlatten());
+
         var dotParagraph = GetDotParagraphParser();
         var dotItemAt = GetDotItemParser();
         var dotUnknown = GetDotUnknownParser();
@@ -82,6 +84,7 @@ public static class SelectorParser
             dotParagraph,
             dotItemAt,
             dotItems,
+            dotFlatten,
             filterBlock,
             dotUnknown);
 
