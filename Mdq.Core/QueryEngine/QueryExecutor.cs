@@ -44,6 +44,7 @@ public static class QueryExecutor
                 Selector.Items => ResolveDotItems(current),
                 Selector.Filter f => ResolveFilter(f, current),
                 Selector.Flatten f => ResolveFlatten(f, current),
+                Selector.SkipTake st => ResolveSkipTake(st, current),
                 _ => throw new Exception($"Unknown selector type: {selector.GetType().Name}")
             };
             if (current.Count == 0)
@@ -183,6 +184,15 @@ public static class QueryExecutor
                 return [mi];
         }
         return [];
+    }
+
+    // -------------------------------------------------------------------------
+    // .skip(n) and .take(n)
+    // -------------------------------------------------------------------------
+
+    private static List<MatchableItem> ResolveSkipTake(Selector.SkipTake st, List<MatchableItem> current)
+    {
+        return current.Skip(st.Skip).Take(st.Take == 0 ? current.Count - st.Skip : st.Take).ToList();
     }
 
     // -------------------------------------------------------------------------

@@ -64,29 +64,15 @@ public static class SelectorParser
         var ows = OptionalWhitespace();
         var poundHeading = GetPoundHeadingParser();
 
-        var dotText = Match(".text").Map(_ => Selector.DotText());
-
-        var dotHeading = Match(".heading").Map(_ => Selector.DotHeading());
-
-        var dotItems = Match(".items").Map(_ => Selector.DotItems());
-
-        var dotFlatten = Match(".flatten").Map(_ => Selector.DotFlatten());
-
-        var dotParagraph = GetDotParagraphParser();
-        var dotItemAt = GetDotItemParser();
-        var dotUnknown = GetDotUnknownParser();
+        var dotSelector = GetDotSelectorWithNoArguments();
+        var dotSelectorWithSingleNumber = GetDotSelectorWithSingleNumberArgument();
         var filterBlock = GetFilterParser();
 
         var selector = First(
             poundHeading,
-            dotText,
-            dotHeading,
-            dotParagraph,
-            dotItemAt,
-            dotItems,
-            dotFlatten,
             filterBlock,
-            dotUnknown);
+            dotSelectorWithSingleNumber,
+            dotSelector);
 
         return Rule(
             selector.List(ows, 1).Map(l => new SelectorChain(l)),
@@ -94,20 +80,48 @@ public static class SelectorParser
             (sc, _) => sc);
     }
 
-    private static IParser<char, Selector> GetDotUnknownParser()
-        => Capture(
+    private static IParser<char, Selector> GetDotSelectorWithNoArguments()
+        => Rule(
             MatchChar('.'),
-            Match(c => c != '#' && c != '.').ListCharToString())
-            .Map(c => Selector.ErrorMessage($"Unknown selector '{new string(c)}'"));
+            First(
+                Trie<string>(t => t
+                    .Add("text")
+                    .Add("heading")
+                    .Add("items")
+                    .Add("flatten")
+                ),
+                Match(c => c != '#' && c != '.').ListCharToString()
+            ),
+            (_, name) =>
+            {
+                return name switch
+                {
+                    "text" => Selector.DotText(),
+                    "heading" => Selector.DotHeading(),
+                    "items" => Selector.DotItems(),
+                    "flatten" => Selector.DotFlatten(),
+                    _ => Selector.ErrorMessage($"Unknown selector '.{name}'")
+                };
+            });
 
-    private static IParser<char, Selector> GetDotItemParser()
+    private static IParser<char, Selector> GetDotSelectorWithSingleNumberArgument()
         => Rule(
-            Match(".item("),
-            // Once we have '.item(', we MUST have a positive integer and a ')' or else we get some kind of error
+            MatchChar('.'),
+            First(
+                Trie<string>(t => t
+                    .Add("item")
+                    .Add("paragraph")
+                    .Add("skip")
+                    .Add("take")
+                ),
+                Match(c => c != '#' && c != '.').ListCharToString()
+            ),
+            MatchChar('('),
+            // Once we have '.name(', we MUST have a positive integer and a ')' or else we get some kind of error
             First(
                 Rule(
                     DigitsAsInteger(1, 5).Map(i => i > 0
-                        ? Selector.DotItemParenIndex(i)
+                        ? new Selector.Temporary(i.ToString())
                         : Selector.ErrorMessage("Numeric value must be non-zero positive")),
                     MatchChar(')'),
                     (d, _) => d),
@@ -116,25 +130,24 @@ public static class SelectorParser
                     MatchChar(')').Optional(),
                     (x, _) => x)
             ),
-            (_, n) => n);
-
-    private static IParser<char, Selector> GetDotParagraphParser()
-        => Rule(
-            Match(".paragraph("),
-            // Once we have '.paragraph(', we MUST have a positive integer and a ')' or else we get some kind of error
-            First(
-                Rule(
-                    DigitsAsInteger(1, 5).Map(i => i > 0
-                        ? Selector.DotParagraphParenIndex(i)
-                        : Selector.ErrorMessage("Numeric value must be non-zero positive")),
-                    MatchChar(')'),
-                    (d, _) => d),
-                Rule(
-                    MatchChar(c => c != ')').ListCharToString().Map(v => Selector.ErrorMessage($"Expected positive numeric index and ')' but found '{v}'")),
-                    MatchChar(')').Optional(),
-                    (x, _) => x)
-            ),
-            (_, n) => n);
+            (_, name, _, n) =>
+            {
+                if (n is Selector.Error)
+                    return n;
+                if (n is Selector.Temporary temp)
+                {
+                    var intValue = int.Parse(temp.Value);
+                    return name switch
+                    {
+                        "item" => Selector.DotItemParenIndex(intValue),
+                        "paragraph" => Selector.DotParagraphParenIndex(intValue),
+                        "skip" => Selector.DotSkipTake(intValue, 0),
+                        "take" => Selector.DotSkipTake(0, intValue),
+                        _ => Selector.ErrorMessage($"Unknown selector '.{name}({temp.Value})'")
+                    };
+                }
+                return Selector.ErrorMessage("Unknown selector sequence");
+            });
 
     private static IParser<char, Selector> GetPoundHeadingParser()
         => Rule(

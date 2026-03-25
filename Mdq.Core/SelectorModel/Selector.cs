@@ -9,6 +9,7 @@ public abstract record Selector
     public static Selector DotItemParenIndex(int index) => new ItemAt(index);
     public static Selector DotItems() => new Items();
     public static Selector DotFlatten() => new Flatten();
+    public static Selector DotSkipTake(int skip, int take) => new SkipTake(skip, take);
     public static Selector ErrorMessage(string message) => new Error(message);
     public static Selector FilterBlock(string property, string op, string value) => new Filter(property, op, value);
 
@@ -58,4 +59,20 @@ public abstract record Selector
     {
         public override string ToString() => ".flatten";
     }
+
+    public sealed record SkipTake(int Skip, int Take) : Selector
+    {
+        public override string ToString()
+        {
+            if (Skip == 0 && Take == 0)
+                return "";
+            if (Skip == 0)
+                return $".take({Take})";
+            if (Take == 0)
+                return $".skip({Skip})";
+            return $".skip({Skip}).take({Take})";
+        }
+    }
+
+    public sealed record Temporary(string Value) : Selector;
 }
