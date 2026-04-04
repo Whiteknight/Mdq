@@ -54,11 +54,8 @@ public static class QueryExecutor
         return current;
     }
 
-    private static List<MatchableItem> ResolvePoundHeading(
-        Selector.Heading selector,
-        List<MatchableItem> items)
-    {
-        return items
+    private static List<MatchableItem> ResolvePoundHeading(Selector.Heading selector, List<MatchableItem> items)
+        => items
             .SelectMany(i => i switch
             {
                 MarkdownDocument d => d.Sections.Where(s => s.Heading.IsMatch(selector.Name)),
@@ -67,27 +64,24 @@ public static class QueryExecutor
             })
             .Cast<MatchableItem>()
             .ToList();
-    }
 
     // -------------------------------------------------------------------------
     // .text
     // -------------------------------------------------------------------------
 
     private static List<MatchableItem> ResolveDotText(List<MatchableItem> items)
-    {
-        return items
+        => items
             .SelectMany(i => i switch
             {
                 MarkdownDocument md => md.Sections[0].Paragraphs.Cast<MatchableItem>(),
                 Section s => s.Paragraphs.Cast<MatchableItem>(),
-                Heading h and { Text: { } } => [new TextBlock(h.Text, 1)],
-                ListItem li => [new TextBlock(li.Content, 1)],
-                CodeBlock cb => [new TextBlock(cb.Content, 1)],
+                Heading h and { Text: { } } => [new SyntheticTextBlock(h.Text, 1, h)],
+                ListItem li => [new SyntheticTextBlock(li.Content, 1, li)],
+                CodeBlock cb => [new SyntheticTextBlock(cb.Content, 1, cb)],
                 // TODO: Should a Paragraph here (besides the CodeBlock) resolve to itself?
                 _ => []
             })
             .ToList();
-    }
 
     // -------------------------------------------------------------------------
     // .heading
@@ -103,11 +97,8 @@ public static class QueryExecutor
     // .paragraph(N)
     // -------------------------------------------------------------------------
 
-    private static List<MatchableItem> ResolveDotParagraphN(
-        Selector.ParagraphAt paragraphSeg,
-        List<MatchableItem> items)
-    {
-        return items
+    private static List<MatchableItem> ResolveDotParagraphN(Selector.ParagraphAt paragraphSeg, List<MatchableItem> items)
+        => items
             .SelectMany(i => i switch
             {
                 MarkdownDocument md => md.Sections[0].Paragraphs.Where(p => p.Index == paragraphSeg.Index),
@@ -116,31 +107,28 @@ public static class QueryExecutor
             })
             .Cast<MatchableItem>()
             .ToList();
-    }
 
     // -------------------------------------------------------------------------
     // .item(N) and .items
     // -------------------------------------------------------------------------
 
-    private static List<MatchableItem> ResolveDotItemN(
-        Selector.ItemAt itemSeg,
-        List<MatchableItem> items)
-    {
-        return items
+    private static List<MatchableItem> ResolveDotItemN(Selector.ItemAt itemSeg, List<MatchableItem> items)
+        => items
             .SelectMany(i => i switch
             {
                 ListItem li => (li.SubList?.Items ?? []).Where(li => li.Index == itemSeg.Index).Cast<MatchableItem>(),
-                ListBlock lb => lb.Items.Where(li => li.Index == itemSeg.Index).Cast<MatchableItem>(),
-                Section s => s.Paragraphs.Take(1).OfType<ListBlock>().SelectMany(lb => lb.Items.Where(li => li.Index == itemSeg.Index).Cast<MatchableItem>()),
+                ListBlock lb => lb.Items
+                    .Where(li => li.Index == itemSeg.Index)
+                    .Cast<MatchableItem>(),
+                Section s => s.Paragraphs.Take(1)
+                    .OfType<ListBlock>()
+                    .SelectMany(lb => lb.Items.Where(li => li.Index == itemSeg.Index).Cast<MatchableItem>()),
                 _ => []
             })
             .ToList();
-    }
 
-    private static List<MatchableItem> ResolveDotItems(
-        List<MatchableItem> items)
-    {
-        return items
+    private static List<MatchableItem> ResolveDotItems(List<MatchableItem> items)
+        => items
             .SelectMany(i => i switch
             {
                 ListBlock lb => lb.Items.Cast<MatchableItem>(),
@@ -148,59 +136,46 @@ public static class QueryExecutor
                 _ => []
             })
             .ToList();
-    }
 
     // -------------------------------------------------------------------------
     // .flatten
     // -------------------------------------------------------------------------
 
     private static List<MatchableItem> ResolveFlatten(Selector.Flatten f, List<MatchableItem> current)
-    {
-        return current
+        => current
             .SelectMany(Flatten)
             .ToList();
-    }
 
     private static IEnumerable<MatchableItem> Flatten(MatchableItem item)
-    {
-        switch (item)
+        => item switch
         {
-            case MarkdownDocument md:
-                return md.Sections.SelectMany(Flatten);
-
-            case Section s:
-                return (s.Heading?.Text != null ? [s.Heading] : Array.Empty<MatchableItem>())
-                    .Concat(s.Paragraphs.SelectMany(p => Flatten(p)))
-                    .Concat(s.Children.SelectMany(Flatten));
-
-            case ListBlock lb:
-                return lb.Items.SelectMany(Flatten);
-
-            case ListItem li:
-                return new MatchableItem[] { li }
-                    .Concat(li.SubList != null ? Flatten(li.SubList) : Array.Empty<MatchableItem>());
-
-            case MatchableItem mi:
-                return [mi];
-        }
-        return [];
-    }
+            MarkdownDocument md => md.Sections.SelectMany(Flatten),
+            Section s => (s.Heading?.Text != null ? [s.Heading] : Array.Empty<MatchableItem>())
+                .Concat(s.Paragraphs.SelectMany(p => Flatten(p)))
+                .Concat(s.Children.SelectMany(Flatten)),
+            ListBlock lb => lb.Items.SelectMany(Flatten),
+            ListItem li => new MatchableItem[] { li }
+                .Concat(li.SubList != null ? Flatten(li.SubList) : []),
+            MatchableItem mi => [mi],
+            _ => [],
+        };
 
     // -------------------------------------------------------------------------
     // .skip(n) and .take(n)
     // -------------------------------------------------------------------------
 
     private static List<MatchableItem> ResolveSkipTake(Selector.SkipTake st, List<MatchableItem> current)
-    {
-        return current.Skip(st.Skip).Take(st.Take == 0 ? current.Count - st.Skip : st.Take).ToList();
-    }
+        => current
+            .Skip(st.Skip)
+            .Take(st.Take == 0 ? current.Count - st.Skip : st.Take)
+            .ToList();
 
     // -------------------------------------------------------------------------
     // [property=value]
     // -------------------------------------------------------------------------
 
     private static List<MatchableItem> ResolveFilter(Selector.Filter f, List<MatchableItem> current)
-    {
-        return current.Where(i => i.IsMatch(f.Property, f.Operator, f.Value)).ToList();
-    }
+        => current
+            .Where(i => i.IsMatch(f.Property, f.Operator, f.Value))
+            .ToList();
 }

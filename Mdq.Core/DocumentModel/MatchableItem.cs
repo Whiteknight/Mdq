@@ -7,7 +7,7 @@ public abstract record MatchableItem
     public abstract bool IsMatch(string property, string op, string value);
 }
 
-public record MarkdownDocument(IReadOnlyList<Section> Sections) : MatchableItem
+public record MarkdownDocument(List<Section> Sections) : MatchableItem
 {
     public override bool IsMatch(string property, string op, string value)
     {
@@ -87,7 +87,7 @@ public enum ListKind
 
 public abstract record Paragraph(int Index) : MatchableItem;
 
-public sealed record TextBlock(string Content, int Index) : Paragraph(Index)
+public record TextBlock(string Content, int Index) : Paragraph(Index)
 {
     public override bool IsMatch(string property, string op, string value)
     {
@@ -97,6 +97,11 @@ public sealed record TextBlock(string Content, int Index) : Paragraph(Index)
             _ => false
         };
     }
+}
+
+public sealed record SyntheticTextBlock(string Content, int Index, MatchableItem Source) : TextBlock(Content, Index)
+{
+    public override bool IsMatch(string property, string op, string value) => base.IsMatch(property, op, value);
 }
 
 public sealed record ListBlock(ListKind Kind, IReadOnlyList<ListItem> Items, int Index) : Paragraph(Index)
