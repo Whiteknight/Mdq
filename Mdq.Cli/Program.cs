@@ -27,18 +27,18 @@ internal static class Program
         }
 
         if (args[0] == "--toc")
-            return ExecuteSelectorAndFile(".flatten[type=heading]", args[1]);
+            return ExecuteSelectorAndFile(new TocRenderer(), ".flatten[type=heading]", args[1]);
 
-        return ExecuteSelectorAndFile(args[0], args[1]);
+        return ExecuteSelectorAndFile(new MarkdownRenderer(), args[0], args[1]);
     }
 
-    private static int ExecuteSelectorAndFile(string selector, string filePath)
+    private static int ExecuteSelectorAndFile(IRenderer renderer, string selector, string filePath)
     {
         return ReadFile(filePath)
             .Bind(MarkdownParser.Parse)
             .With(_ => SelectorParser.Parse(selector))
             .Bind((args) => QueryExecutor.Execute(args.Item1, args.Item2))
-            .Map(Renderer.Render)
+            .Map(renderer.Render)
             .Switch(
                 s => Console.WriteLine(s),
                 e => Console.Error.WriteLine($"Error: {e.Message}"))

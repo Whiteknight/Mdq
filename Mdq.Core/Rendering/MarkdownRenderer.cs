@@ -3,11 +3,11 @@ using Mdq.Core.DocumentModel;
 
 namespace Mdq.Core.Rendering;
 
-public static class Renderer
+public class MarkdownRenderer : IRenderer
 {
     private static int _listIndent = 0;
 
-    public static string Render(List<MatchableItem> items)
+    public string Render(List<MatchableItem> items)
     {
         _listIndent = 0;
         var sb = new StringBuilder();
@@ -17,7 +17,6 @@ public static class Renderer
 
     private static void RenderItems(List<MatchableItem> items, StringBuilder sb)
     {
-        // TODO: Eventually should be able to render to different formats (json, html, etc)
         if (items.Count == 0)
             return;
 
