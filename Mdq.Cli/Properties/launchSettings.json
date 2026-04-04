@@ -2,7 +2,7 @@
   "profiles": {
     "Mdq.Cli": {
       "commandName": "Project",
-      "commandLineArgs": "--toc C:\\projects\\mdq\\README.md"
+      "commandLineArgs": "\"##Execution#Selector Syntax\" C:\\projects\\mdq\\README.md"
     }
   }
 }

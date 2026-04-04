@@ -27,7 +27,7 @@ public sealed record MdqStepDefinitions(ScenarioContext Context)
         var results = QueryExecutor.Execute(doc, chain).Match(r => r, e => throw new Exception(e.Message));
         Context["result"] = results;
 
-        var output = MarkdownRenderer.Render(results).Trim();
+        var output = new MarkdownRenderer().Render(results).Trim();
         Context["output"] = output;
     }
 
