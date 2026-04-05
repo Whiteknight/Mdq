@@ -2,7 +2,7 @@
   "profiles": {
     "Mdq.Cli": {
       "commandName": "Project",
-      "commandLineArgs": "\"##Execution#Selector Syntax\" C:\\projects\\mdq\\README.md"
+      "commandLineArgs": "--add \"##Overview.paragraph(1)\" C:\\projects\\mdq\\README.md \"WHATEVER\""
     }
   }
 }

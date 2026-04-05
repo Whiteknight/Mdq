@@ -58,7 +58,7 @@ public abstract record Result<T, E>
         var ok1 = this as Ok;
         var v1 = ok1!.Value;
         var inner = getOther(v1);
-        if (inner is Err e2)
+        if (inner is Result<T2, E>.Err e2)
             return new Result<(T, T2), E>.Err(e2.Error);
 
         var v2 = (inner as Result<T2, E>.Ok)!.Value;

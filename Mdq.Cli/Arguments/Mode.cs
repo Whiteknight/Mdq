@@ -1,4 +1,6 @@
-﻿namespace Mdq.Cli.Arguments;
+﻿using Mdq.Core.Editing;
+
+namespace Mdq.Cli.Arguments;
 
 public abstract record Mode();
 
@@ -9,3 +11,6 @@ public abstract record FileMode(string FilePath) : Mode;
 public sealed record TocMode(string FilePath) : FileMode(FilePath);
 
 public sealed record QueryMode(string Selector, string FilePath) : FileMode(FilePath);
+
+public sealed record EditMode(EditOperation Operation, string Selector, string FilePath, bool InPlace)
+    : FileMode(FilePath);

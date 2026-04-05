@@ -15,7 +15,7 @@ public static class MarkdownParser
         var markdigDoc = Markdig.Markdown.Parse(markdown);
         var flatSections = BuildFlatSections(markdigDoc);
         var tree = BuildSectionTree(flatSections);
-        return new MarkdownDocument(tree);
+        return new MarkdownDocument(tree.ToList());
     }
 
     // -------------------------------------------------------------------------
