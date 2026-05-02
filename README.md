@@ -17,7 +17,8 @@ Markdown documents have structure and are inherently hierarchical: Sections are 
 - `#` Moves down to the next level of heading, without having to specify the exact title. 
 - `.text` Returns the complete text ("paragraphs" or "blocks") at the current location. For example, to get this list of selector syntax items (and everything else under the "Selector Syntax" heading) we would do `###Selector Syntax.text`
 - `.paragraph(n)` Returns the specified paragraph (or block) in the current section. To get this list by itself we would do `###Selector Syntax.paragraph(1)`.
-- `.heading` Gets just the text of a heading without the leading `#` characters or the body text. For example the selector `#.heading` would return "`Mdq`".
+- `.heading` Gets just the heading with the leading `#` characters. For example the selector `#.heading` would return "`# Mdq`".
+	- To get just the text of the heading without the leading `#` characters, use `#.heading.text` for just "`Mdq`".
 - `.item(n)` Returns a single item from a numbered or bulleted list. To get this bulleted item that you are reading right now, you would use `###Selector Syntax.paragraph(1).item(6)`.
 - `[property=value]` allows filtering of values. Notice that the available properties and their possible values are determined by the kinds of items in the current working list.
 - `.items` enumerates the individual items in a list block. This is useful when you want to filter out certain list items using the `[property=value]` syntax, for example.
