@@ -27,7 +27,8 @@ public static class ArgumentParser
         return new HelpMode("Unknown arguments");
     }
 
-    private static bool IsEditVerb(string arg) => arg == "--add" || arg == "--set";
+    private static bool IsEditVerb(string arg)
+        => arg == "--add" || arg == "--set";
 
     private static Mode ParseEditMode(string[] args, bool inPlace)
     {
