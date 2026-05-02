@@ -173,6 +173,25 @@ public static class MarkdownParser
             return;
         }
 
+        if (inline is EmphasisInline emphasis)
+        {
+            var delim = new string(emphasis.DelimiterChar, emphasis.DelimiterCount);
+            sb.Append(delim);
+            foreach (var child in emphasis)
+                AppendInlineText(child, sb);
+            sb.Append(delim);
+            return;
+        }
+
+        if (inline is CodeInline code)
+        {
+            var delim = new string(code.Delimiter, code.DelimiterCount);
+            sb.Append(delim);
+            sb.Append(code.Content);
+            sb.Append(delim);
+            return;
+        }
+
         if (inline is ContainerInline container)
         {
             foreach (var child in container)

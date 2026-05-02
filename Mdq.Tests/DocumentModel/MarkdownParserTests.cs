@@ -340,6 +340,22 @@ public class MarkdownParserTests
         paragraphs[2].Should().BeOfType<DM.TextBlock>();
     }
 
+    [Test]
+    public void Parse_TextMarkup_CorrectlyIncluded()
+    {
+        const string markdown = """
+            # Section
+            Plain text **bold text** *italic text* `code` _underline_ ~~strikethrough~~ normal text.
+            """;
+
+        var model = ParseOk(markdown);
+        var paragraphs = model.Sections[0].Paragraphs;
+
+        paragraphs.Should().HaveCount(1);
+        paragraphs[0].Should().BeOfType<DM.TextBlock>()
+            .Which.Content.Should().Be("Plain text **bold text** *italic text* `code` _underline_ ~~strikethrough~~ normal text.");
+    }
+
     // -------------------------------------------------------------------------
     // Helper
     // -------------------------------------------------------------------------
