@@ -113,6 +113,6 @@ public class MarkdownRenderer : IRenderer
     {
         sb.AppendLine($"```{cb.Language}");
         sb.AppendLine(cb.Content);
-        sb.AppendLine("```");
+        sb.Append("```");
     }
 }

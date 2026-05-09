@@ -18,8 +18,15 @@ internal static class Program
             TocMode tocm => PrintTableOfContents(tocm),
             QueryMode qm => ExtractQuery(qm),
             EditMode em => ExecuteEdit(em),
+            VersionMode => PrintVersion(),
             _ => PrintHelp(new HelpMode { ErrorMessage = "Unknown mode. Use --help for usage instructions." }),
         };
+    }
+
+    private static int PrintVersion()
+    {
+        Console.WriteLine(AppVersion.Number);
+        return 0;
     }
 
     private static int PrintHelp(HelpMode help)
@@ -31,18 +38,28 @@ internal static class Program
             tw.WriteLine($"Error: {help.ErrorMessage}");
             tw.WriteLine();
         }
+        tw.WriteLine($"""
+        MDQ Markdown Query Tool
+        Version {AppVersion.Number}
+        """);
+
         tw.WriteLine("""
+        
         Usage: mdq <selector> <file>
+               mdq --version|-v
+               mdq --help|-h
                mdq --toc <file>
                mdq --add [--in-place] <selector> <file> <text>
                mdq --set [--in-place] <selector> <file> <text>
 
-          <selector>  Query selector string (e.g. "#Introduction.text")
-          <file>      Path to the Markdown file to query
-          --toc       Only print headings, like a table of contents
-          --add       Append text to the node(s) matched by <selector>
-          --set       Replace the content of the node matched by <selector>
-          --in-place  Write the result back to <file> instead of stdout
+          <selector>   Query selector string (e.g. "#Introduction.text")
+          <file>       Path to the Markdown file to query
+          --help|-h    Show this help message
+          --version|-v Print the version number
+          --toc        Only print headings, like a table of contents
+          --add        Append text to the node(s) matched by <selector>
+          --set        Replace the content of the node matched by <selector>
+          --in-place   Write the result back to <file> instead of stdout
 
         Examples:
           mdq "" README.md

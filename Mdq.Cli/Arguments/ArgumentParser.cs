@@ -6,6 +6,8 @@ public static class ArgumentParser
 {
     public static Mode Parse(string[] args)
     {
+        if (args.Length == 1 && (args[0] == "--version" || args[0] == "-v"))
+            return new VersionMode();
         if (args.Length == 0 || args.Any(a => a == "--help" || a == "-h"))
             return new HelpMode();
 

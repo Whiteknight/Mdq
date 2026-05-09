@@ -6,6 +6,8 @@ public abstract record Mode();
 
 public sealed record HelpMode(string? ErrorMessage = null) : Mode;
 
+public sealed record VersionMode() : Mode;
+
 public abstract record FileMode(string FilePath) : Mode;
 
 public sealed record TocMode(string FilePath) : FileMode(FilePath);

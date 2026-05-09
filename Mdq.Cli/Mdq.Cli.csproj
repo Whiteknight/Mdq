@@ -13,4 +13,15 @@
     <PublishAot>true</PublishAot>
   </PropertyGroup>
 
+  <Target Name="InjectVersionConstants" BeforeTargets="CoreCompile">
+    <ItemGroup>
+        <Compile Include="$(IntermediateOutputPath)VersionConstants.g.cs" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(IntermediateOutputPath)VersionConstants.g.cs" Overwrite="True" Lines="
+namespace Mdq.Cli%3B
+public static class AppVersion {
+    public const string Number = &quot;$(Version)&quot;%3B
+}" />
+  </Target>
+
 </Project>
