@@ -143,6 +143,30 @@ public sealed record CodeBlock(string? Language, string Content, int Index) : Pa
     }
 }
 
+public sealed record TableRow(IReadOnlyList<string> Cells, int Index) : MatchableItem
+{
+    public override bool IsMatch(string property, string op, string value)
+    {
+        return (property, op, value) switch
+        {
+            ("type", "=", "tablerow") => true,
+            _ => false
+        };
+    }
+}
+
+public sealed record TableBlock(TableRow Header, IReadOnlyList<TableRow> Rows, int Index) : Paragraph(Index)
+{
+    public override bool IsMatch(string property, string op, string value)
+    {
+        return (property, op, value) switch
+        {
+            ("type", "=", "table") => true,
+            _ => false
+        };
+    }
+}
+
 public record ListItem(
     string Content,
     ListKind Kind,

@@ -10,6 +10,9 @@ public abstract record Selector
     public static Selector DotItems() => new Items();
     public static Selector DotFlatten() => new Flatten();
     public static Selector DotSkipTake(int skip, int take) => new SkipTake(skip, take);
+    public static Selector DotHeader() => new HeaderContent();
+    public static Selector DotRowParenIndex(int index) => new RowAt(index);
+    public static Selector DotCellParenIndex(int index) => new CellAt(index);
     public static Selector ErrorMessage(string message) => new Error(message);
     public static Selector FilterBlock(string property, string op, string value) => new Filter(property, op, value);
 
@@ -72,6 +75,24 @@ public abstract record Selector
                 return $".skip({Skip})";
             return $".skip({Skip}).take({Take})";
         }
+    }
+
+    /// <summary>.header -- header row of a table.</summary>
+    public sealed record HeaderContent() : Selector
+    {
+        public override string ToString() => ".header";
+    }
+
+    /// <summary>.row(N) -- Nth data row (1-indexed) of a table.</summary>
+    public sealed record RowAt(int Index) : Selector
+    {
+        public override string ToString() => $".row({Index})";
+    }
+
+    /// <summary>.cell(N) -- Nth cell (1-indexed) of a table row.</summary>
+    public sealed record CellAt(int Index) : Selector
+    {
+        public override string ToString() => $".cell({Index})";
     }
 
     public sealed record Temporary(string Value) : Selector;

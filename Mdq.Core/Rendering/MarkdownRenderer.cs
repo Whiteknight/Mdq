@@ -67,6 +67,14 @@ public class MarkdownRenderer : IRenderer
             case CodeBlock cb:
                 RenderCodeBlock(cb, sb);
                 break;
+
+            case TableRow tr:
+                RenderTableRow(tr, sb);
+                break;
+
+            case TableBlock tb:
+                RenderTableBlock(tb, sb);
+                break;
         }
     }
 
@@ -114,5 +122,46 @@ public class MarkdownRenderer : IRenderer
         sb.AppendLine($"```{cb.Language}");
         sb.AppendLine(cb.Content);
         sb.Append("```");
+    }
+
+    private static void RenderTableRow(TableRow tr, StringBuilder sb)
+    {
+        sb.Append("| ");
+        sb.Append(string.Join(" | ", tr.Cells.Select(c => c.PadRight(8))));
+        sb.Append(" |");
+    }
+
+    private static void RenderTableBlock(TableBlock tb, StringBuilder sb)
+    {
+        var allRows = new List<TableRow> { tb.Header };
+        allRows.AddRange(tb.Rows);
+
+        // Determine column widths
+        var colCount = tb.Header.Cells.Count;
+        var widths = new int[colCount];
+        foreach (var row in allRows)
+            for (int i = 0; i < row.Cells.Count && i < colCount; i++)
+                widths[i] = Math.Max(widths[i], row.Cells[i].Length);
+
+        // Render header
+        sb.Append("| ");
+        sb.Append(string.Join(" | ", tb.Header.Cells.Select((c, i) => c.PadRight(widths[i]))));
+        sb.AppendLine(" |");
+
+        // Render separator
+        sb.Append("| ");
+        sb.Append(string.Join(" | ", widths.Select(w => new string('-', w))));
+        sb.AppendLine(" |");
+
+        // Render data rows
+        for (int r = 0; r < tb.Rows.Count; r++)
+        {
+            var row = tb.Rows[r];
+            sb.Append("| ");
+            sb.Append(string.Join(" | ", row.Cells.Select((c, i) => c.PadRight(widths[i]))));
+            sb.Append(" |");
+            if (r < tb.Rows.Count - 1)
+                sb.AppendLine();
+        }
     }
 }

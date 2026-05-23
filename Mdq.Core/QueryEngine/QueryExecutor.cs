@@ -45,6 +45,9 @@ public static class QueryExecutor
                 Selector.Filter f => ResolveFilter(f, current),
                 Selector.Flatten f => ResolveFlatten(f, current),
                 Selector.SkipTake st => ResolveSkipTake(st, current),
+                Selector.HeaderContent => ResolveDotHeader(current),
+                Selector.RowAt r => ResolveDotRow(r, current),
+                Selector.CellAt c => ResolveDotCell(c, current),
                 _ => throw new Exception($"Unknown selector type: {selector.GetType().Name}")
             };
             if (current.Count == 0)
@@ -177,5 +180,52 @@ public static class QueryExecutor
     private static List<MatchableItem> ResolveFilter(Selector.Filter f, List<MatchableItem> current)
         => current
             .Where(i => i.IsMatch(f.Property, f.Operator, f.Value))
+            .ToList();
+
+    // -------------------------------------------------------------------------
+    // .header, .row(N), .cell(N)
+    // -------------------------------------------------------------------------
+
+    private static List<MatchableItem> ResolveDotHeader(List<MatchableItem> items)
+        => items
+            .SelectMany(i => i switch
+            {
+                TableBlock tb => new MatchableItem[] { tb.Header },
+                MarkdownDocument md => md.Sections.SelectMany(s => s.Paragraphs).OfType<TableBlock>().Select(tb => (MatchableItem)tb.Header),
+                Section s => s.Paragraphs.OfType<TableBlock>().Select(tb => (MatchableItem)tb.Header),
+                _ => []
+            })
+            .ToList();
+
+    private static List<MatchableItem> ResolveDotRow(Selector.RowAt rowSeg, List<MatchableItem> items)
+        => items
+            .SelectMany(i => i switch
+            {
+                TableBlock tb when rowSeg.Index == 0 => new MatchableItem[] { tb.Header },
+                TableBlock tb => tb.Rows.Where(r => r.Index == rowSeg.Index).Cast<MatchableItem>(),
+                MarkdownDocument md when rowSeg.Index == 0 => md.Sections.SelectMany(s => s.Paragraphs).OfType<TableBlock>().Select(tb => (MatchableItem)tb.Header),
+                MarkdownDocument md => md.Sections.SelectMany(s => s.Paragraphs).OfType<TableBlock>().SelectMany(tb => tb.Rows.Where(r => r.Index == rowSeg.Index)).Cast<MatchableItem>(),
+                Section s when rowSeg.Index == 0 => s.Paragraphs.OfType<TableBlock>().Select(tb => (MatchableItem)tb.Header),
+                Section s => s.Paragraphs.OfType<TableBlock>().SelectMany(tb => tb.Rows.Where(r => r.Index == rowSeg.Index)).Cast<MatchableItem>(),
+                _ => []
+            })
+            .ToList();
+
+    private static List<MatchableItem> ResolveDotCell(Selector.CellAt cellSeg, List<MatchableItem> items)
+        => items
+            .SelectMany(i => i switch
+            {
+                TableRow tr when cellSeg.Index >= 1 && cellSeg.Index <= tr.Cells.Count
+                    => new MatchableItem[] { new SyntheticTextBlock(tr.Cells[cellSeg.Index - 1], 1, tr) },
+                TableBlock tb when cellSeg.Index >= 1 && cellSeg.Index <= tb.Header.Cells.Count
+                    => tb.Rows.Select(r => (MatchableItem)new SyntheticTextBlock(r.Cells[cellSeg.Index - 1], 1, r)),
+                MarkdownDocument md => md.Sections.SelectMany(s => s.Paragraphs).OfType<TableBlock>()
+                    .Where(tb => cellSeg.Index >= 1 && cellSeg.Index <= tb.Header.Cells.Count)
+                    .SelectMany(tb => tb.Rows.Select(r => (MatchableItem)new SyntheticTextBlock(r.Cells[cellSeg.Index - 1], 1, r))),
+                Section s => s.Paragraphs.OfType<TableBlock>()
+                    .Where(tb => cellSeg.Index >= 1 && cellSeg.Index <= tb.Header.Cells.Count)
+                    .SelectMany(tb => tb.Rows.Select(r => (MatchableItem)new SyntheticTextBlock(r.Cells[cellSeg.Index - 1], 1, r))),
+                _ => []
+            })
             .ToList();
 }

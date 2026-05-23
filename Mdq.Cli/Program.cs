@@ -87,9 +87,7 @@ internal static class Program
             .Switch(
                 s => Console.WriteLine(s),
                 e => Console.Error.WriteLine($"Error: {e.Message}"))
-            .Match(
-                _ => 0,
-                _ => 1);
+            .Match(_ => 0, _ => 1);
 
     // ---------------------------------------------------------------------------
     // Helpers

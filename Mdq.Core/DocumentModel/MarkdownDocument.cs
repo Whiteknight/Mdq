@@ -1,1 +1,0 @@
-namespace Mdq.Core.DocumentModel;

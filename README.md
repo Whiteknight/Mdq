@@ -22,6 +22,8 @@ Markdown documents have structure and are inherently hierarchical: Sections are 
 - `.item(n)` Returns a single item from a numbered or bulleted list. To get this bulleted item that you are reading right now, you would use `###Selector Syntax.paragraph(1).item(6)`.
 - `[property=value]` allows filtering of values. Notice that the available properties and their possible values are determined by the kinds of items in the current working list.
 - `.items` enumerates the individual items in a list block. This is useful when you want to filter out certain list items using the `[property=value]` syntax, for example.
+- `.row(n)` For a pipe-delimited table, return the contents of the given row. `.row(0)` is the header row.
+- `.cell(n)` For a pipe-delimited table, return the contents of the given column.
 
 ### Item Types
 

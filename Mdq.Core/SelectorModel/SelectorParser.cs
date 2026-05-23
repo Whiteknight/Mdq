@@ -89,6 +89,7 @@ public static class SelectorParser
                     .Add("heading")
                     .Add("items")
                     .Add("flatten")
+                    .Add("header")
                 ),
                 Match(c => c != '#' && c != '.').ListCharToString()
             ),
@@ -100,6 +101,7 @@ public static class SelectorParser
                     "heading" => Selector.DotHeading(),
                     "items" => Selector.DotItems(),
                     "flatten" => Selector.DotFlatten(),
+                    "header" => Selector.DotHeader(),
                     _ => Selector.ErrorMessage($"Unknown selector '.{name}'")
                 };
             });
@@ -113,16 +115,16 @@ public static class SelectorParser
                     .Add("paragraph")
                     .Add("skip")
                     .Add("take")
+                    .Add("row")
+                    .Add("cell")
                 ),
                 Match(c => c != '#' && c != '.').ListCharToString()
             ),
             MatchChar('('),
-            // Once we have '.name(', we MUST have a positive integer and a ')' or else we get some kind of error
+            // Once we have '.name(', we MUST have a non-negative integer and a ')' or else we get some kind of error
             First(
                 Rule(
-                    DigitsAsInteger(1, 5).Map(i => i > 0
-                        ? new Selector.Temporary(i.ToString())
-                        : Selector.ErrorMessage("Numeric value must be non-zero positive")),
+                    DigitsAsInteger(1, 5).Map(i => (Selector)new Selector.Temporary(i.ToString())),
                     MatchChar(')'),
                     (d, _) => d),
                 Rule(
@@ -139,11 +141,13 @@ public static class SelectorParser
                     var intValue = int.Parse(temp.Value);
                     return name switch
                     {
-                        "item" => Selector.DotItemParenIndex(intValue),
-                        "paragraph" => Selector.DotParagraphParenIndex(intValue),
-                        "skip" => Selector.DotSkipTake(intValue, 0),
-                        "take" => Selector.DotSkipTake(0, intValue),
-                        _ => Selector.ErrorMessage($"Unknown selector '.{name}({temp.Value})'")
+                        "item" when intValue > 0 => Selector.DotItemParenIndex(intValue),
+                        "paragraph" when intValue > 0 => Selector.DotParagraphParenIndex(intValue),
+                        "skip" when intValue > 0 => Selector.DotSkipTake(intValue, 0),
+                        "take" when intValue > 0 => Selector.DotSkipTake(0, intValue),
+                        "row" => Selector.DotRowParenIndex(intValue),
+                        "cell" when intValue > 0 => Selector.DotCellParenIndex(intValue),
+                        _ => Selector.ErrorMessage($"Numeric value must be non-zero positive for '.{name}'")
                     };
                 }
                 return Selector.ErrorMessage("Unknown selector sequence");

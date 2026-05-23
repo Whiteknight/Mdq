@@ -1,3 +1,4 @@
+using Markdig;
 using Markdig.Helpers;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
@@ -12,7 +13,10 @@ public static class MarkdownParser
         if (string.IsNullOrWhiteSpace(markdown))
             return new MarkdownDocument([]);
 
-        var markdigDoc = Markdig.Markdown.Parse(markdown);
+        var pipeline = new MarkdownPipelineBuilder()
+            .UsePipeTables()
+            .Build();
+        var markdigDoc = Markdown.Parse(markdown, pipeline);
         var flatSections = BuildFlatSections(markdigDoc);
         var tree = BuildSectionTree(flatSections);
         return new MarkdownDocument(tree.ToList());
@@ -63,6 +67,7 @@ public static class MarkdownParser
             QuoteBlock qb => new BlockQuote(ExtractQuoteText(qb), paragraphIndex),
             Markdig.Syntax.FencedCodeBlock fcb => new CodeBlock(fcb.Info, ExtractLineText(fcb.Lines), paragraphIndex),
             Markdig.Syntax.CodeBlock cb => new CodeBlock(null, ExtractLineText(cb.Lines), paragraphIndex),
+            Markdig.Extensions.Tables.Table table => MapTable(table, paragraphIndex),
             _ => null
         };
 
@@ -142,6 +147,46 @@ public static class MarkdownParser
 
         var mappedSubList = subList is not null ? MapListBlock(subList, 1) : null;
         return new ListItem(textContent, kind, index, mappedSubList);
+    }
+
+    // -------------------------------------------------------------------------
+    // Table mapping
+    // -------------------------------------------------------------------------
+
+    private static TableBlock MapTable(Markdig.Extensions.Tables.Table table, int paragraphIndex)
+    {
+        TableRow? header = null;
+        var dataRows = new List<TableRow>();
+        int rowIndex = 1;
+
+        foreach (var block in table)
+        {
+            if (block is Markdig.Extensions.Tables.TableRow markdigRow)
+            {
+                var cells = markdigRow
+                    .OfType<Markdig.Extensions.Tables.TableCell>()
+                    .Select(cell => ExtractCellText(cell))
+                    .ToList();
+
+                if (markdigRow.IsHeader)
+                {
+                    header = new TableRow(cells, 0);
+                }
+                else
+                {
+                    dataRows.Add(new TableRow(cells, rowIndex++));
+                }
+            }
+        }
+
+        header ??= new TableRow(new List<string>(), 0);
+        return new TableBlock(header, dataRows, paragraphIndex);
+    }
+
+    private static string ExtractCellText(Markdig.Extensions.Tables.TableCell cell)
+    {
+        var paragraph = cell.OfType<ParagraphBlock>().FirstOrDefault();
+        return paragraph is not null ? ExtractInlineText(paragraph.Inline) : string.Empty;
     }
 
     // -------------------------------------------------------------------------
