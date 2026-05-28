@@ -1,9 +1,13 @@
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Primitives;
 
 namespace Mdq.Core.DocumentModel;
 
 public abstract record MatchableItem
 {
+    public StringSegment LeadingTrivia { get; init; }
+    public StringSegment TrailingTrivia { get; init; }
+
     public abstract bool IsMatch(string property, string op, string value);
 }
 
@@ -19,24 +23,23 @@ public record MarkdownDocument(List<Section> Sections) : MatchableItem
     }
 }
 
-public record Heading(string? Text, int Level) : MatchableItem
+public record Heading(StringSegment Text, int Level) : MatchableItem
 {
-    public static Heading Empty => new(null, 0);
+    public static Heading Empty => new(default, 0);
 
     public bool IsMatch(string sectionHeading)
     {
-        // Top-level contents, before the first heading, should not be returned if we do #.
-        // # should always step us at least one level, so the first # should take us to 1, etc.
-        if (Level == 0 && Text == null)
+        if (Level == 0 && !Text.HasValue)
             return false;
 
         if (string.IsNullOrEmpty(sectionHeading))
             return true;
 
-        var regexString = "^" + Regex.Escape(sectionHeading ?? string.Empty).Replace(@"\*", ".*").Replace(@"\?", ".") + "$";
+        var text = Text.HasValue ? Text.Value! : string.Empty;
+        var regexString = "^" + Regex.Escape(sectionHeading).Replace(@"\*", ".*").Replace(@"\?", ".") + "$";
 
         return new Regex(regexString, RegexOptions.IgnoreCase | RegexOptions.Singleline)
-            .IsMatch(Text ?? string.Empty);
+            .IsMatch(text);
     }
 
     public override bool IsMatch(string property, string op, string value)
@@ -87,7 +90,7 @@ public enum ListKind
 
 public abstract record Paragraph(int Index) : MatchableItem;
 
-public record TextBlock(string Content, int Index) : Paragraph(Index)
+public record TextBlock(StringSegment Content, int Index) : Paragraph(Index)
 {
     public override bool IsMatch(string property, string op, string value)
     {
@@ -99,7 +102,7 @@ public record TextBlock(string Content, int Index) : Paragraph(Index)
     }
 }
 
-public sealed record SyntheticTextBlock(string Content, int Index, MatchableItem Source) : TextBlock(Content, Index)
+public sealed record SyntheticTextBlock(StringSegment Content, int Index, MatchableItem Source) : TextBlock(Content, Index)
 {
     public override bool IsMatch(string property, string op, string value) => base.IsMatch(property, op, value);
 }
@@ -118,7 +121,7 @@ public sealed record ListBlock(ListKind Kind, IReadOnlyList<ListItem> Items, int
     }
 }
 
-public sealed record BlockQuote(string Content, int Index) : Paragraph(Index)
+public sealed record BlockQuote(StringSegment Content, int Index) : Paragraph(Index)
 {
     public override bool IsMatch(string property, string op, string value)
     {
@@ -130,7 +133,7 @@ public sealed record BlockQuote(string Content, int Index) : Paragraph(Index)
     }
 }
 
-public sealed record CodeBlock(string? Language, string Content, int Index) : Paragraph(Index)
+public sealed record CodeBlock(string? Language, StringSegment Content, int Index) : Paragraph(Index)
 {
     public override bool IsMatch(string property, string op, string value)
     {
@@ -143,7 +146,7 @@ public sealed record CodeBlock(string? Language, string Content, int Index) : Pa
     }
 }
 
-public sealed record TableRow(IReadOnlyList<string> Cells, int Index) : MatchableItem
+public sealed record TableRow(IReadOnlyList<StringSegment> Cells, int Index) : MatchableItem
 {
     public override bool IsMatch(string property, string op, string value)
     {
@@ -168,22 +171,23 @@ public sealed record TableBlock(TableRow Header, IReadOnlyList<TableRow> Rows, i
 }
 
 public record ListItem(
-    string Content,
+    StringSegment Content,
     ListKind Kind,
     int Index,
     ListBlock? SubList) : MatchableItem
 {
     public override bool IsMatch(string property, string op, string value)
     {
+        var content = Content.HasValue ? Content.Value! : string.Empty;
         return (property, op, value) switch
         {
             ("type", "=", "listitem") => true,
-            ("checkable", "=", "true") => Content.StartsWith("[ ]") || Content.StartsWith("[x]"),
-            ("checkable", "=", "false") => !Content.StartsWith("[ ]") && !Content.StartsWith("[x]"),
-            ("checked", "=", "true") => Content.StartsWith("[x]"),
-            ("checked", "=", "false") => !Content.StartsWith("[x]"),
-            ("optional", "=", "true") => Content.StartsWith("[ ]*") || Content.StartsWith("[x]*"),
-            ("optional", "=", "false") => !Content.StartsWith("[ ]*") && !Content.StartsWith("[x]*"),
+            ("checkable", "=", "true") => content.StartsWith("[ ]") || content.StartsWith("[x]"),
+            ("checkable", "=", "false") => !content.StartsWith("[ ]") && !content.StartsWith("[x]"),
+            ("checked", "=", "true") => content.StartsWith("[x]"),
+            ("checked", "=", "false") => !content.StartsWith("[x]"),
+            ("optional", "=", "true") => content.StartsWith("[ ]*") || content.StartsWith("[x]*"),
+            ("optional", "=", "false") => !content.StartsWith("[ ]*") && !content.StartsWith("[x]*"),
             _ => false
         };
     }

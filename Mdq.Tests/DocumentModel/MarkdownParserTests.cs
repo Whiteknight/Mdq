@@ -48,11 +48,11 @@ public class MarkdownParserTests
 
         model.Sections.Should().HaveCount(2);
         var preamble = model.Sections[0];
-        preamble.Heading.Text.Should().BeNull();
+        preamble.Heading.Text.Value.Should().BeNull();
         preamble.Heading.Level.Should().Be(0);
         preamble.Paragraphs.Should().HaveCount(1);
         preamble.Paragraphs[0].Should().BeOfType<DM.TextBlock>()
-            .Which.Content.Should().Be("Some introductory text.");
+            .Which.Content.Value.Should().Be("Some introductory text.");
     }
 
     [Test]
@@ -66,7 +66,7 @@ public class MarkdownParserTests
         var model = ParseOk(markdown);
 
         model.Sections.Should().HaveCount(1);
-        model.Sections[0].Heading.Text.Should().Be("First Heading");
+        model.Sections[0].Heading.Text.Value.Should().Be("First Heading");
     }
 
     // -------------------------------------------------------------------------
@@ -85,7 +85,7 @@ public class MarkdownParserTests
 
         model.Sections.Should().HaveCount(1);
         var section = model.Sections[0];
-        section.Heading.Text.Should().Be("Alpha");
+        section.Heading.Text.Value.Should().Be("Alpha");
         section.Heading.Level.Should().Be(1);
         section.Children.Should().BeEmpty();
     }
@@ -105,12 +105,12 @@ public class MarkdownParserTests
 
         model.Sections.Should().HaveCount(1);
         var parent = model.Sections[0];
-        parent.Heading.Text.Should().Be("Parent");
+        parent.Heading.Text.Value.Should().Be("Parent");
         parent.Heading.Level.Should().Be(1);
         parent.Children.Should().HaveCount(1);
 
         var child = parent.Children[0];
-        child.Heading.Text.Should().Be("Child");
+        child.Heading.Text.Value.Should().Be("Child");
         child.Heading.Level.Should().Be(2);
         child.Children.Should().BeEmpty();
     }
@@ -129,8 +129,8 @@ public class MarkdownParserTests
         var model = ParseOk(markdown);
 
         model.Sections.Should().HaveCount(2);
-        model.Sections[0].Heading.Text.Should().Be("Alpha");
-        model.Sections[1].Heading.Text.Should().Be("Beta");
+        model.Sections[0].Heading.Text.Value.Should().Be("Alpha");
+        model.Sections[1].Heading.Text.Value.Should().Be("Beta");
     }
 
     [Test]
@@ -152,8 +152,8 @@ public class MarkdownParserTests
         model.Sections.Should().HaveCount(1);
         var root = model.Sections[0];
         root.Children.Should().HaveCount(2);
-        root.Children[0].Heading.Text.Should().Be("Child A");
-        root.Children[1].Heading.Text.Should().Be("Child B");
+        root.Children[0].Heading.Text.Value.Should().Be("Child A");
+        root.Children[1].Heading.Text.Value.Should().Be("Child B");
     }
 
     [Test]
@@ -202,9 +202,9 @@ public class MarkdownParserTests
 
         section.Paragraphs.Should().HaveCount(2);
         section.Paragraphs[0].Should().BeOfType<DM.TextBlock>()
-            .Which.Content.Should().Be("First block.");
+            .Which.Content.Value.Should().Be("First block.");
         section.Paragraphs[1].Should().BeOfType<DM.TextBlock>()
-            .Which.Content.Should().Be("Second block.");
+            .Which.Content.Value.Should().Be("Second block.");
     }
 
     [Test]
@@ -245,9 +245,9 @@ public class MarkdownParserTests
         var listBlock = section.Paragraphs[0].Should().BeOfType<DM.ListBlock>().Subject;
         listBlock.Kind.Should().Be(DM.ListKind.Bulleted);
         listBlock.Items.Should().HaveCount(3);
-        listBlock.Items[0].Content.Should().Be("Alpha");
-        listBlock.Items[1].Content.Should().Be("Beta");
-        listBlock.Items[2].Content.Should().Be("Gamma");
+        listBlock.Items[0].Content.Value.Should().Be("Alpha");
+        listBlock.Items[1].Content.Value.Should().Be("Beta");
+        listBlock.Items[2].Content.Value.Should().Be("Gamma");
     }
 
     [Test]
@@ -264,9 +264,9 @@ public class MarkdownParserTests
         var listBlock = model.Sections[0].Paragraphs[0].Should().BeOfType<DM.ListBlock>().Subject;
         listBlock.Kind.Should().Be(DM.ListKind.Numbered);
         listBlock.Items.Should().HaveCount(3);
-        listBlock.Items[0].Content.Should().Be("First");
-        listBlock.Items[1].Content.Should().Be("Second");
-        listBlock.Items[2].Content.Should().Be("Third");
+        listBlock.Items[0].Content.Value.Should().Be("First");
+        listBlock.Items[1].Content.Value.Should().Be("Second");
+        listBlock.Items[2].Content.Value.Should().Be("Third");
     }
 
     // -------------------------------------------------------------------------
@@ -290,11 +290,11 @@ public class MarkdownParserTests
         listBlock.Items.Should().HaveCount(2);
 
         var parentItem = listBlock.Items[0];
-        parentItem.Content.Should().Be("Parent item");
+        parentItem.Content.Value.Should().Be("Parent item");
         parentItem.SubList.Should().NotBeNull();
         parentItem.SubList!.Items.Should().HaveCount(2);
-        parentItem.SubList.Items[0].Content.Should().Be("Child one");
-        parentItem.SubList.Items[1].Content.Should().Be("Child two");
+        parentItem.SubList.Items[0].Content.Value.Should().Be("Child one");
+        parentItem.SubList.Items[1].Content.Value.Should().Be("Child two");
 
         listBlock.Items[1].SubList.Should().BeNull();
     }
@@ -316,7 +316,7 @@ public class MarkdownParserTests
 
         section.Paragraphs.Should().HaveCount(1);
         section.Paragraphs[0].Should().BeOfType<DM.BlockQuote>()
-            .Which.Content.Should().Be("This is a quote.");
+            .Which.Content.Value.Should().Be("This is a quote.");
     }
 
     [Test]
@@ -353,7 +353,7 @@ public class MarkdownParserTests
 
         paragraphs.Should().HaveCount(1);
         paragraphs[0].Should().BeOfType<DM.TextBlock>()
-            .Which.Content.Should().Be("Plain text **bold text** *italic text* `code` _underline_ ~~strikethrough~~ normal text.");
+            .Which.Content.Value.Should().Be("Plain text **bold text** *italic text* `code` _underline_ ~~strikethrough~~ normal text.");
     }
 
     // -------------------------------------------------------------------------

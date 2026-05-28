@@ -79,8 +79,8 @@ public class QueryExecutorTests
         var result = ExecuteOk(doc, "");
 
         var resultDoc = result[0].Should().BeOfType<MarkdownDocument>().Which;
-        resultDoc.Sections[0].Heading.Text.Should().Be("Alpha");
-        resultDoc.Sections[1].Heading.Text.Should().Be("Beta");
+        resultDoc.Sections[0].Heading.Text.Value.Should().Be("Alpha");
+        resultDoc.Sections[1].Heading.Text.Value.Should().Be("Beta");
     }
 
     [Test]
@@ -105,15 +105,15 @@ public class QueryExecutorTests
         var result = ExecuteOk(doc, "#Parent");
 
         var section = result[0].Should().BeOfType<Section>().Which;
-        section.Heading.Text.Should().Be("Parent");
+        section.Heading.Text.Value.Should().Be("Parent");
 
         section.Paragraphs.Should().ContainSingle()
             .Which.Should().BeOfType<TextBlock>()
-            .Which.Content.Should().Be("Parent body.");
+            .Which.Content.Value.Should().Be("Parent body.");
 
         section.Children.Should().ContainSingle()
             .Which.Should().BeOfType<Section>()
-            .Which.Heading.Text.Should().Be("Child");
+            .Which.Heading.Text.Value.Should().Be("Child");
     }
 
     [Test]
@@ -126,7 +126,7 @@ public class QueryExecutorTests
         var result = ExecuteOk(doc, "#Beta");
 
         result[0].Should().BeOfType<Section>()
-            .Which.Heading.Text.Should().Be("Beta");
+            .Which.Heading.Text.Value.Should().Be("Beta");
     }
 
     // -------------------------------------------------------------------------
@@ -144,15 +144,15 @@ public class QueryExecutorTests
         var result = ExecuteOk(doc, "#Parent#Child");
 
         var section = result[0].Should().BeOfType<Section>().Which;
-        section.Heading.Text.Should().Be("Child");
+        section.Heading.Text.Value.Should().Be("Child");
 
         section.Paragraphs.Should().ContainSingle()
             .Which.Should().BeOfType<TextBlock>()
-            .Which.Content.Should().Be("Child body.");
+            .Which.Content.Value.Should().Be("Child body.");
 
         section.Children.Should().ContainSingle()
             .Which.Should().BeOfType<Section>()
-            .Which.Heading.Text.Should().Be("Grandchild");
+            .Which.Heading.Text.Value.Should().Be("Grandchild");
     }
 
     [Test]
@@ -166,7 +166,7 @@ public class QueryExecutorTests
         var result = ExecuteOk(doc, "#Parent#Child#Grandchild");
 
         result[0].Should().BeOfType<Section>()
-            .Which.Heading.Text.Should().Be("Grandchild");
+            .Which.Heading.Text.Value.Should().Be("Grandchild");
     }
 
     [Test]
@@ -180,9 +180,9 @@ public class QueryExecutorTests
         var result = ExecuteOk(doc, "##*din*");
 
         result[0].Should().BeOfType<Section>()
-            .Which.Heading.Text.Should().Be("Heading1");
+            .Which.Heading.Text.Value.Should().Be("Heading1");
         result[1].Should().BeOfType<Section>()
-            .Which.Heading.Text.Should().Be("Heading2");
+            .Which.Heading.Text.Value.Should().Be("Heading2");
     }
 
     // -------------------------------------------------------------------------
@@ -196,8 +196,8 @@ public class QueryExecutorTests
 
         var result = ExecuteOk(doc, "#Intro.text");
 
-        result[0].Should().BeOfType<TextBlock>().Which.Content.Should().Contain("First para.");
-        result[1].Should().BeOfType<TextBlock>().Which.Content.Should().Contain("Second para.");
+        result[0].Should().BeOfType<TextBlock>().Which.Content.Value.Should().Contain("First para.");
+        result[1].Should().BeOfType<TextBlock>().Which.Content.Value.Should().Contain("Second para.");
     }
 
     [Test]
@@ -210,7 +210,7 @@ public class QueryExecutorTests
         var result = ExecuteOk(doc, "#Main.text");
 
         result[0].Should().BeOfType<TextBlock>()
-            .Which.Content.Should().Contain("Main body.");
+            .Which.Content.Value.Should().Contain("Main body.");
     }
 
     // -------------------------------------------------------------------------
@@ -225,7 +225,7 @@ public class QueryExecutorTests
         var result = ExecuteOk(doc, "#Introduction.heading");
 
         result[0].Should().BeOfType<Heading>()
-            .Which.Text.Should().Be("Introduction");
+            .Which.Text.Value.Should().Be("Introduction");
     }
 
     [Test]
@@ -236,7 +236,7 @@ public class QueryExecutorTests
         var result = ExecuteOk(doc, "#My Section.heading");
 
         result[0].Should().BeOfType<Heading>()
-            .Which.Text.Should().Be("My Section");
+            .Which.Text.Value.Should().Be("My Section");
     }
 
     // -------------------------------------------------------------------------
@@ -254,9 +254,9 @@ public class QueryExecutorTests
         };
         var doc = DocWithSections(SectionWithParagraphs("Section", 1, paragraphs));
 
-        ExecuteOk(doc, "#Section.paragraph(1)")[0].Should().BeOfType<TextBlock>().Which.Content.Should().Be("First.");
-        ExecuteOk(doc, "#Section.paragraph(2)")[0].Should().BeOfType<TextBlock>().Which.Content.Should().Be("Second.");
-        ExecuteOk(doc, "#Section.paragraph(3)")[0].Should().BeOfType<TextBlock>().Which.Content.Should().Be("Third.");
+        ExecuteOk(doc, "#Section.paragraph(1)")[0].Should().BeOfType<TextBlock>().Which.Content.Value.Should().Be("First.");
+        ExecuteOk(doc, "#Section.paragraph(2)")[0].Should().BeOfType<TextBlock>().Which.Content.Value.Should().Be("Second.");
+        ExecuteOk(doc, "#Section.paragraph(3)")[0].Should().BeOfType<TextBlock>().Which.Content.Value.Should().Be("Third.");
     }
 
     // -------------------------------------------------------------------------
@@ -275,9 +275,9 @@ public class QueryExecutorTests
         var listBlock = new ListBlock(ListKind.Bulleted, items, 1);
         var doc = DocWithSections(SectionWithParagraphs("List Section", 1, [listBlock]));
 
-        ExecuteOk(doc, "#List Section.paragraph(1).item(1)")[0].Should().BeOfType<ListItem>().Which.Content.Should().Be("Alpha");
-        ExecuteOk(doc, "#List Section.paragraph(1).item(2)")[0].Should().BeOfType<ListItem>().Which.Content.Should().Be("Beta");
-        ExecuteOk(doc, "#List Section.paragraph(1).item(3)")[0].Should().BeOfType<ListItem>().Which.Content.Should().Be("Gamma");
+        ExecuteOk(doc, "#List Section.paragraph(1).item(1)")[0].Should().BeOfType<ListItem>().Which.Content.Value.Should().Be("Alpha");
+        ExecuteOk(doc, "#List Section.paragraph(1).item(2)")[0].Should().BeOfType<ListItem>().Which.Content.Value.Should().Be("Beta");
+        ExecuteOk(doc, "#List Section.paragraph(1).item(3)")[0].Should().BeOfType<ListItem>().Which.Content.Value.Should().Be("Gamma");
     }
 
     // -------------------------------------------------------------------------
@@ -303,7 +303,7 @@ public class QueryExecutorTests
 
         var result = ExecuteOk(doc, "#Section.paragraph(1).item(1).item(2)");
 
-        result[0].Should().BeOfType<ListItem>().Which.Content.Should().Be("Sub-Beta");
+        result[0].Should().BeOfType<ListItem>().Which.Content.Value.Should().Be("Sub-Beta");
     }
 
     // -------------------------------------------------------------------------
@@ -388,7 +388,7 @@ public class QueryExecutorTests
 
         result[0].Should().BeOfType<MarkdownDocument>()
             .Which.Sections.Should().ContainSingle()
-            .Which.Heading.Text.Should().Be("H1");
+            .Which.Heading.Text.Value.Should().Be("H1");
     }
 
     [Test]
@@ -437,6 +437,6 @@ public class QueryExecutorTests
             .Which.Should().BeOfType<Section>()
             .Which.Paragraphs.Should().ContainSingle()
             .Which.Should().BeOfType<BlockQuote>()
-            .Which.Content.Should().Be("Quoted text.");
+            .Which.Content.Value.Should().Be("Quoted text.");
     }
 }

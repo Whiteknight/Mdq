@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Markdig" Version="1.1.1" />
+    <PackageReference Include="Microsoft.Extensions.Primitives" Version="10.0.0-preview.4.25258.110" />
     <PackageReference Include="ParserObjects" Version="6.2.0" />
   </ItemGroup>
 

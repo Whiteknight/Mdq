@@ -1,6 +1,7 @@
 using System.Text;
 using Mdq.Core.DocumentModel;
 using Mdq.Core.Editing;
+using Microsoft.Extensions.Primitives;
 
 namespace Mdq.Core.Rendering;
 
@@ -64,7 +65,7 @@ public sealed class EditingMarkdownRenderer
                 break;
 
             case Heading heading:
-                sb.Append($"{new string('#', heading.Level)} {heading.Text ?? string.Empty}");
+                sb.Append($"{new string('#', heading.Level)} {Str(heading.Text)}");
                 break;
 
             case TextBlock tb:
@@ -97,7 +98,7 @@ public sealed class EditingMarkdownRenderer
     {
         var headingText = IsTarget(section)
             ? MutatedSectionHeadingText(section)
-            : section.Heading.Text ?? string.Empty;
+            : Str(section.Heading.Text);
 
         sb.Append($"{new string('#', section.Heading.Level)} {headingText}").AppendLine().AppendLine();
 
@@ -109,7 +110,7 @@ public sealed class EditingMarkdownRenderer
     }
 
     private string MutatedSectionHeadingText(Section section)
-        => _operation is Set set ? set.Text : section.Heading.Text ?? string.Empty;
+        => _operation is Set set ? set.Text : Str(section.Heading.Text);
 
     // -------------------------------------------------------------------------
     // TextBlock
@@ -119,15 +120,15 @@ public sealed class EditingMarkdownRenderer
     {
         if (!IsTarget(tb))
         {
-            sb.Append(tb.Content);
+            sb.Append(Str(tb.Content));
             return;
         }
 
         var content = _operation switch
         {
-            Add add => $"{tb.Content} {add.Text}",
+            Add add => $"{Str(tb.Content)} {add.Text}",
             Set set => set.Text,
-            _ => tb.Content
+            _ => Str(tb.Content)
         };
 
         sb.Append(content);
@@ -140,8 +141,8 @@ public sealed class EditingMarkdownRenderer
     private void RenderBlockQuote(BlockQuote bq, StringBuilder sb)
     {
         var content = IsTarget(bq) && _operation is Add add
-            ? $"{bq.Content} {add.Text}"
-            : bq.Content;
+            ? $"{Str(bq.Content)} {add.Text}"
+            : Str(bq.Content);
 
         foreach (var line in content.Split('\n'))
             sb.Append($"> {line}").AppendLine();
@@ -179,7 +180,7 @@ public sealed class EditingMarkdownRenderer
     {
         var content = IsTarget(item) && _operation is Set set
             ? set.Text
-            : item.Content;
+            : Str(item.Content);
 
         string bullet = item.Kind == ListKind.Numbered ? $"{item.Index}." : "-";
         sb.Append($"{new string(' ', _listIndent * 2)}{bullet} {content}");
@@ -200,8 +201,8 @@ public sealed class EditingMarkdownRenderer
     private void RenderCodeBlock(CodeBlock cb, StringBuilder sb)
     {
         var content = IsTarget(cb) && _operation is Add add
-            ? $"{cb.Content}\n{add.Text}"
-            : cb.Content;
+            ? $"{Str(cb.Content)}\n{add.Text}"
+            : Str(cb.Content);
 
         sb.AppendLine($"```{cb.Language}");
         sb.AppendLine(content);
@@ -214,4 +215,6 @@ public sealed class EditingMarkdownRenderer
 
     private bool IsTarget(MatchableItem candidate)
         => _resolvedTargets.Any(t => ReferenceEquals(candidate, t));
+
+    private static string Str(StringSegment segment) => segment.HasValue ? segment.Value! : string.Empty;
 }

@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using Mdq.Core.DocumentModel;
+using Microsoft.Extensions.Primitives;
 
 namespace Mdq.Core.Rendering;
 
@@ -15,11 +16,24 @@ public class MarkdownRenderer : IRenderer
         return sb.ToString();
     }
 
+    private static bool HasTrivia(MatchableItem item) =>
+        (item.LeadingTrivia.HasValue && item.LeadingTrivia.Length > 0) ||
+        (item.TrailingTrivia.HasValue && item.TrailingTrivia.Length > 0);
+
     private static void RenderItems(List<MatchableItem> items, StringBuilder sb)
     {
         if (items.Count == 0)
             return;
 
+        // If any item has trivia, use trivia-based rendering (no synthetic separators)
+        if (items.Any(HasTrivia))
+        {
+            foreach (var item in items)
+                RenderItem(item, sb);
+            return;
+        }
+
+        // Synthetic rendering: add separators between items
         RenderItem(items[0], sb);
         var lastItem = items[0];
         foreach (var item in items.Skip(1))
@@ -45,11 +59,11 @@ public class MarkdownRenderer : IRenderer
                 break;
 
             case Heading heading:
-                sb.Append($"{new string('#', heading.Level)} {heading.Text ?? string.Empty}");
+                RenderHeading(heading, sb);
                 break;
 
             case TextBlock tb:
-                sb.Append(tb.Content);
+                RenderTextBlock(tb, sb);
                 break;
 
             case BlockQuote bq:
@@ -78,16 +92,47 @@ public class MarkdownRenderer : IRenderer
         }
     }
 
+    private static void RenderHeading(Heading heading, StringBuilder sb)
+    {
+        AppendSegment(sb, heading.LeadingTrivia);
+        sb.Append($"{new string('#', heading.Level)} {Str(heading.Text)}");
+        AppendSegment(sb, heading.TrailingTrivia);
+    }
+
     private static void RenderSection(Section section, StringBuilder sb)
     {
-        sb.Append($"{new string('#', section.Heading.Level)} {section.Heading.Text ?? string.Empty}").AppendLine().AppendLine();
+        // Check if this section has trivia-based content
+        bool hasTrivia = HasTrivia(section.Heading) ||
+                         section.Paragraphs.Any(HasTrivia) ||
+                         section.Children.Any(HasTrivia);
 
-        RenderItems(section.Paragraphs.Cast<MatchableItem>().Concat(section.Children.Cast<MatchableItem>()).ToList(), sb);
+        if (hasTrivia)
+        {
+            // Trivia-based: emit heading with its trivia, then paragraphs/children with theirs
+            RenderHeading(section.Heading, sb);
+            foreach (var para in section.Paragraphs)
+                RenderItem(para, sb);
+            foreach (var child in section.Children)
+                RenderItem(child, sb);
+        }
+        else
+        {
+            // Synthetic: old behavior
+            sb.Append($"{new string('#', section.Heading.Level)} {Str(section.Heading.Text)}").AppendLine().AppendLine();
+            RenderItems(section.Paragraphs.Cast<MatchableItem>().Concat(section.Children.Cast<MatchableItem>()).ToList(), sb);
+        }
+    }
+
+    private static void RenderTextBlock(TextBlock tb, StringBuilder sb)
+    {
+        AppendSegment(sb, tb.LeadingTrivia);
+        AppendSegment(sb, tb.Content);
+        AppendSegment(sb, tb.TrailingTrivia);
     }
 
     private static void RenderBlockQuote(BlockQuote bq, StringBuilder sb)
     {
-        foreach (var line in bq.Content.Split('\n'))
+        foreach (var line in Str(bq.Content).Split('\n'))
             sb.Append($"> {line}").AppendLine();
     }
 
@@ -106,7 +151,7 @@ public class MarkdownRenderer : IRenderer
     private static void RenderListItem(ListItem item, StringBuilder sb)
     {
         string bullet = item.Kind == ListKind.Numbered ? $"{item.Index}." : "-";
-        sb.Append($"{new string(' ', _listIndent * 2)}{bullet} {item.Content}");
+        sb.Append($"{new string(' ', _listIndent * 2)}{bullet} {Str(item.Content)}");
 
         if (item.SubList is not null)
         {
@@ -120,32 +165,47 @@ public class MarkdownRenderer : IRenderer
     private static void RenderCodeBlock(CodeBlock cb, StringBuilder sb)
     {
         sb.AppendLine($"```{cb.Language}");
-        sb.AppendLine(cb.Content);
+        sb.AppendLine(Str(cb.Content));
         sb.Append("```");
     }
 
     private static void RenderTableRow(TableRow tr, StringBuilder sb)
     {
+        if (HasTrivia(tr))
+        {
+            AppendSegment(sb, tr.LeadingTrivia);
+            AppendSegment(sb, tr.TrailingTrivia);
+            return;
+        }
+
+        // Synthetic rendering (Markdig path)
         sb.Append("| ");
-        sb.Append(string.Join(" | ", tr.Cells.Select(c => c.PadRight(8))));
+        sb.Append(string.Join(" | ", tr.Cells.Select(c => Str(c).PadRight(8))));
         sb.Append(" |");
     }
 
     private static void RenderTableBlock(TableBlock tb, StringBuilder sb)
     {
+        if (HasTrivia(tb))
+        {
+            AppendSegment(sb, tb.LeadingTrivia);
+            AppendSegment(sb, tb.TrailingTrivia);
+            return;
+        }
+
+        // Synthetic rendering (Markdig path)
         var allRows = new List<TableRow> { tb.Header };
         allRows.AddRange(tb.Rows);
 
-        // Determine column widths
         var colCount = tb.Header.Cells.Count;
         var widths = new int[colCount];
         foreach (var row in allRows)
             for (int i = 0; i < row.Cells.Count && i < colCount; i++)
-                widths[i] = Math.Max(widths[i], row.Cells[i].Length);
+                widths[i] = Math.Max(widths[i], Str(row.Cells[i]).Length);
 
         // Render header
         sb.Append("| ");
-        sb.Append(string.Join(" | ", tb.Header.Cells.Select((c, i) => c.PadRight(widths[i]))));
+        sb.Append(string.Join(" | ", tb.Header.Cells.Select((c, i) => Str(c).PadRight(widths[i]))));
         sb.AppendLine(" |");
 
         // Render separator
@@ -158,10 +218,18 @@ public class MarkdownRenderer : IRenderer
         {
             var row = tb.Rows[r];
             sb.Append("| ");
-            sb.Append(string.Join(" | ", row.Cells.Select((c, i) => c.PadRight(widths[i]))));
+            sb.Append(string.Join(" | ", row.Cells.Select((c, i) => Str(c).PadRight(widths[i]))));
             sb.Append(" |");
             if (r < tb.Rows.Count - 1)
                 sb.AppendLine();
         }
+    }
+
+    private static string Str(StringSegment segment) => segment.HasValue ? segment.Value! : string.Empty;
+
+    private static void AppendSegment(StringBuilder sb, StringSegment segment)
+    {
+        if (segment.HasValue && segment.Length > 0)
+            sb.Append(segment.Value);
     }
 }

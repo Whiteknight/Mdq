@@ -2,6 +2,7 @@ using Markdig;
 using Markdig.Helpers;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
+using Microsoft.Extensions.Primitives;
 using Mdq.Core.Shared;
 
 namespace Mdq.Core.DocumentModel;
@@ -165,7 +166,7 @@ public static class MarkdownParser
             {
                 var cells = markdigRow
                     .OfType<Markdig.Extensions.Tables.TableCell>()
-                    .Select(cell => ExtractCellText(cell))
+                    .Select(cell => (StringSegment)ExtractCellText(cell))
                     .ToList();
 
                 if (markdigRow.IsHeader)
@@ -179,7 +180,7 @@ public static class MarkdownParser
             }
         }
 
-        header ??= new TableRow(new List<string>(), 0);
+        header ??= new TableRow(new List<StringSegment>(), 0);
         return new TableBlock(header, dataRows, paragraphIndex);
     }
 

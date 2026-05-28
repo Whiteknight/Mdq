@@ -398,7 +398,7 @@ public class EditingMarkdownRendererTests
 
         reparsed.Sections.Should().HaveCount(1);
         var para = reparsed.Sections[0].Paragraphs[0].Should().BeOfType<TextBlock>().Subject;
-        para.Content.Should().Be("Hello world");
+        para.Content.Value.Should().Be("Hello world");
     }
 
     [Test]
@@ -413,7 +413,7 @@ public class EditingMarkdownRendererTests
 
         var list = reparsed.Sections[0].Paragraphs[0].Should().BeOfType<ListBlock>().Subject;
         list.Items.Should().HaveCount(2);
-        list.Items[1].Content.Should().Be("b");
+        list.Items[1].Content.Value.Should().Be("b");
     }
 
     [Test]
@@ -425,7 +425,7 @@ public class EditingMarkdownRendererTests
         var rendered = Render(doc, section, new Set("Updated"));
         var reparsed = ParseOk(rendered);
 
-        reparsed.Sections[0].Heading.Text.Should().Be("Updated");
+        reparsed.Sections[0].Heading.Text.Value.Should().Be("Updated");
         reparsed.Sections[0].Heading.Level.Should().Be(2);
     }
 
@@ -440,7 +440,7 @@ public class EditingMarkdownRendererTests
         var reparsed = ParseOk(rendered);
 
         var list = reparsed.Sections[0].Paragraphs[0].Should().BeOfType<ListBlock>().Subject;
-        list.Items[0].Content.Should().Be("after");
+        list.Items[0].Content.Value.Should().Be("after");
     }
 
     [Test]
@@ -454,10 +454,10 @@ public class EditingMarkdownRendererTests
 
         var code = reparsed.Sections[0].Paragraphs[0].Should().BeOfType<CodeBlock>().Subject;
         // AppendLine uses Environment.NewLine; the parser trims and normalises line endings
-        code.Content.Should().ContainAll("line1", "line2");
-        code.Content.Should().Contain("line1");
-        code.Content.Should().Contain("line2");
+        code.Content.Value.Should().ContainAll("line1", "line2");
+        code.Content.Value.Should().Contain("line1");
+        code.Content.Value.Should().Contain("line2");
         // Verify line1 comes before line2
-        code.Content.IndexOf("line1").Should().BeLessThan(code.Content.IndexOf("line2"));
+        code.Content.Value!.IndexOf("line1").Should().BeLessThan(code.Content.Value!.IndexOf("line2"));
     }
 }
