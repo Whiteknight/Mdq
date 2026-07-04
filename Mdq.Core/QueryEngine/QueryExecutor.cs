@@ -191,7 +191,9 @@ public static class QueryExecutor
             .SelectMany(i => i switch
             {
                 TableBlock tb => [tb.Header],
-                MarkdownDocument md => md.TopLevelSection.Children.SelectMany(s => s.Paragraphs).OfType<TableBlock>().Select(tb => (MatchableItem)tb.Header),
+                MarkdownDocument md => md.TopLevelSection.Paragraphs.OfType<TableBlock>()
+                    .Concat(md.TopLevelSection.Children.SelectMany(s => s.Paragraphs).OfType<TableBlock>())
+                    .Select(tb => (MatchableItem)tb.Header),
                 Section s => s.Paragraphs.OfType<TableBlock>().Select(tb => (MatchableItem)tb.Header),
                 _ => []
             })
@@ -203,8 +205,15 @@ public static class QueryExecutor
             {
                 TableBlock tb when rowSeg.Index == 0 => [tb.Header],
                 TableBlock tb => tb.Rows.Where(r => r.Index == rowSeg.Index).Cast<MatchableItem>(),
-                MarkdownDocument md when rowSeg.Index == 0 => md.TopLevelSection.Children.SelectMany(s => s.Paragraphs).OfType<TableBlock>().Select(tb => (MatchableItem)tb.Header),
-                MarkdownDocument md => md.TopLevelSection.Children.SelectMany(s => s.Paragraphs).OfType<TableBlock>().SelectMany(tb => tb.Rows.Where(r => r.Index == rowSeg.Index)).Cast<MatchableItem>(),
+                MarkdownDocument md when rowSeg.Index == 0
+                    => md.TopLevelSection.Paragraphs.OfType<TableBlock>()
+                        .Concat(md.TopLevelSection.Children.SelectMany(s => s.Paragraphs).OfType<TableBlock>())
+                        .Select(tb => (MatchableItem)tb.Header),
+                MarkdownDocument md
+                    => md.TopLevelSection.Paragraphs.OfType<TableBlock>()
+                        .Concat(md.TopLevelSection.Children.SelectMany(s => s.Paragraphs).OfType<TableBlock>())
+                        .SelectMany(tb => tb.Rows.Where(r => r.Index == rowSeg.Index))
+                        .Cast<MatchableItem>(),
                 Section s when rowSeg.Index == 0 => s.Paragraphs.OfType<TableBlock>().Select(tb => (MatchableItem)tb.Header),
                 Section s => s.Paragraphs.OfType<TableBlock>().SelectMany(tb => tb.Rows.Where(r => r.Index == rowSeg.Index)).Cast<MatchableItem>(),
                 _ => []
@@ -219,12 +228,14 @@ public static class QueryExecutor
                     => [new SyntheticTextBlock(tr.Cells[cellSeg.Index - 1], 1, tr)],
                 TableBlock tb when cellSeg.Index >= 1 && cellSeg.Index <= tb.Header.Cells.Count
                     => tb.Rows.Select(r => (MatchableItem)new SyntheticTextBlock(r.Cells[cellSeg.Index - 1], 1, r)),
-                MarkdownDocument md => md.TopLevelSection.Children.SelectMany(s => s.Paragraphs).OfType<TableBlock>()
+                MarkdownDocument md
+                => md.TopLevelSection.Paragraphs.OfType<TableBlock>()
+                    .Concat(md.TopLevelSection.Children.SelectMany(s => s.Paragraphs).OfType<TableBlock>())
                     .Where(tb => cellSeg.Index >= 1 && cellSeg.Index <= tb.Header.Cells.Count)
-                    .SelectMany(tb => tb.Rows.Select(r => (MatchableItem)new SyntheticTextBlock(r.Cells[cellSeg.Index - 1], 1, r))),
+                    .SelectMany(tb => tb.Rows.Select(r => (MatchableItem)new SyntheticTextBlock(r.Cells[cellSeg.Index - 1], 1, r) { TrailingTrivia = Environment.NewLine })),
                 Section s => s.Paragraphs.OfType<TableBlock>()
                     .Where(tb => cellSeg.Index >= 1 && cellSeg.Index <= tb.Header.Cells.Count)
-                    .SelectMany(tb => tb.Rows.Select(r => (MatchableItem)new SyntheticTextBlock(r.Cells[cellSeg.Index - 1], 1, r))),
+                    .SelectMany(tb => tb.Rows.Select(r => (MatchableItem)new SyntheticTextBlock(r.Cells[cellSeg.Index - 1], 1, r) { TrailingTrivia = Environment.NewLine })),
                 _ => []
             })
             .ToList();

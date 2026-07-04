@@ -116,7 +116,6 @@ public class MarkdownRenderer : IRenderer
 
         if (item.SubList is not null)
         {
-            sb.AppendLine();
             _listIndent++;
             RenderItem(item.SubList, sb);
             _listIndent--;
@@ -132,13 +131,49 @@ public class MarkdownRenderer : IRenderer
 
     private static void RenderTableRow(TableRow tr, StringBuilder sb)
     {
+        foreach (var cell in tr.Cells)
+            sb.Append($"| {Str(cell)} ");
+        sb.Append("|");
+    }
+
+    private static void RenderTableRow(TableRow tr, StringBuilder sb, List<int> cellWidths)
+    {
         AppendSegment(sb, tr.LeadingTrivia);
+        for (int i = 0; i < tr.Cells.Count; i++)
+        {
+            var cell = tr.Cells[i];
+            sb.Append("| ");
+            var str = Str(cell);
+            sb.Append(str);
+            sb.Append(new string(' ', cellWidths[i] - str.Length));
+            sb.Append(" ");
+        }
+        sb.Append("|");
         AppendSegment(sb, tr.TrailingTrivia);
     }
 
     private static void RenderTableBlock(TableBlock tb, StringBuilder sb)
     {
         AppendSegment(sb, tb.LeadingTrivia);
+
+        var widths = tb.Header.Cells.Select(c => c.Length).ToList();
+        foreach (var row in tb.Rows)
+        {
+            for (int i = 0; i < row.Cells.Count; i++)
+            {
+                if (i < widths.Count)
+                    widths[i] = Math.Max(widths[i], row.Cells[i].Length);
+                else
+                    widths.Add(row.Cells[i].Length);
+            }
+        }
+
+        RenderTableRow(tb.Header, sb, widths);
+        foreach (var width in widths)
+            sb.Append($"| {new string('-', width)} ");
+        sb.Append("|").AppendLine();
+        foreach (var row in tb.Rows)
+            RenderTableRow(row, sb, widths);
         AppendSegment(sb, tb.TrailingTrivia);
     }
 

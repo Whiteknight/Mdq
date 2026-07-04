@@ -25,14 +25,14 @@ Rule: Table navigation
         When I execute selector ".row(1)"
         Then The result text should be:
             """
-            | R1 C1    | R1 C2    |
+            | R1 C1 | R1 C2 |
             """
 
     Scenario: Table Row 2
         When I execute selector ".row(2)"
         Then The result text should be:
             """
-            | R2 C1    | R2 C2    |
+            | R2 C1 | R2 C2 |
             """
 
     Scenario: Table Row 1 Cell 1
@@ -95,7 +95,7 @@ Rule: Table under a heading
         When I execute selector "#Data.row(2)"
         Then The result text should be:
             """
-            | Bob      | 25       |
+            | Bob | 25 |
             """
 
     Scenario: Table cell under a section
@@ -144,7 +144,7 @@ Rule: Row zero is the header
         When I execute selector ".row(0)"
         Then The result text should be:
             """
-            | Name     | Age      |
+            | Name | Age |
             """
 
     Scenario: Row 0 cell returns a header cell
@@ -170,7 +170,6 @@ Rule: Column extraction with cell on a table
         Then The result text should be:
             """
             Alice
-
             Bob
             """
 
@@ -179,7 +178,6 @@ Rule: Column extraction with cell on a table
         Then The result text should be:
             """
             30
-
             25
             """
 

@@ -171,7 +171,7 @@ namespace Mdq.SpecTests.Features
         await testRunner.WhenAsync("I execute selector \".row(1)\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 26
-        await testRunner.ThenAsync("The result text should be:", "| R1 C1    | R1 C2    |", ((global::Reqnroll.Table)(null)), "Then ");
+        await testRunner.ThenAsync("The result text should be:", "| R1 C1 | R1 C2 |", ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -205,7 +205,7 @@ namespace Mdq.SpecTests.Features
         await testRunner.WhenAsync("I execute selector \".row(2)\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 33
-        await testRunner.ThenAsync("The result text should be:", "| R2 C1    | R2 C2    |", ((global::Reqnroll.Table)(null)), "Then ");
+        await testRunner.ThenAsync("The result text should be:", "| R2 C1 | R2 C2 |", ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -443,7 +443,7 @@ namespace Mdq.SpecTests.Features
         await testRunner.WhenAsync("I execute selector \"#Data.row(2)\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 96
-        await testRunner.ThenAsync("The result text should be:", "| Bob      | 25       |", ((global::Reqnroll.Table)(null)), "Then ");
+        await testRunner.ThenAsync("The result text should be:", "| Bob | 25 |", ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -542,7 +542,7 @@ namespace Mdq.SpecTests.Features
         await testRunner.WhenAsync("I execute selector \".row(0)\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 145
-        await testRunner.ThenAsync("The result text should be:", "| Name     | Age      |", ((global::Reqnroll.Table)(null)), "Then ");
+        await testRunner.ThenAsync("The result text should be:", "| Name | Age |", ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -608,7 +608,7 @@ namespace Mdq.SpecTests.Features
         await testRunner.WhenAsync("I execute selector \".cell(1)\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 170
-        await testRunner.ThenAsync("The result text should be:", "Alice\r\n\r\nBob", ((global::Reqnroll.Table)(null)), "Then ");
+        await testRunner.ThenAsync("The result text should be:", "Alice\r\nBob", ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -624,7 +624,7 @@ namespace Mdq.SpecTests.Features
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Cell 2 without row returns second column values", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = new global::Reqnroll.RuleInfo("Column extraction with cell on a table", null, tagsOfRule);
-#line 177
+#line 176
     this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -637,11 +637,11 @@ namespace Mdq.SpecTests.Features
 #line 160
         await testRunner.GivenAsync("I have markdown text:", "| Name  | Age |\r\n|-------|-----|\r\n| Alice | 30  |\r\n| Bob   | 25  |", ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 178
+#line 177
         await testRunner.WhenAsync("I execute selector \".cell(2)\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 179
-        await testRunner.ThenAsync("The result text should be:", "30\r\n\r\n25", ((global::Reqnroll.Table)(null)), "Then ");
+#line 178
+        await testRunner.ThenAsync("The result text should be:", "30\r\n25", ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -657,7 +657,7 @@ namespace Mdq.SpecTests.Features
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Paragraph selector extracts table from section with mixed content", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = new global::Reqnroll.RuleInfo("Table among multiple paragraphs", null, tagsOfRule);
-#line 188
+#line 186
     this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -667,14 +667,14 @@ namespace Mdq.SpecTests.Features
             else
             {
                 await this.ScenarioStartAsync();
-#line 189
+#line 187
         await testRunner.GivenAsync("I have markdown text:", "# Report\r\n\r\nHere is the summary.\r\n\r\n| Item   | Count |\r\n|--------|-------|\r\n| App" +
                         "les | 5     |\r\n| Pears  | 3     |\r\n\r\nSome trailing notes.", ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 202
+#line 200
         await testRunner.WhenAsync("I execute selector \"#Report.paragraph(2)\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 203
+#line 201
         await testRunner.ThenAsync("The result text should be:", "| Item   | Count |\r\n| ------ | ----- |\r\n| Apples | 5     |\r\n| Pears  | 3     |", ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }

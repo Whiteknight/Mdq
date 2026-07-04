@@ -233,6 +233,14 @@ public static class MarkdownParser
             return (paragraph with { TrailingTrivia = trailing }, remainder);
         }
 
+        var (isPipeTable, _) = IsPipeTable(buffer);
+        if (isPipeTable)
+        {
+            (paragraph, remainder) = ParsePipeTable(buffer, paragraphIndex);
+            (var trailing, remainder) = GatherTrivia(remainder);
+            return (paragraph with { TrailingTrivia = trailing }, remainder);
+        }
+
         (paragraph, remainder) = ParseTextBlock(buffer, paragraphIndex);
         (var trailingTrivia, remainder) = GatherTrivia(remainder);
         return (paragraph with { TrailingTrivia = trailingTrivia }, remainder);
@@ -404,7 +412,7 @@ public static class MarkdownParser
         return (true, marker, language, trailing, remainder);
     }
 
-    private static (Paragraph Paragraph, StringSegment Reminder) ParseFencedCodeBlock(StringSegment buffer, int paragraphIndex)
+    private static (Paragraph Paragraph, StringSegment Remainder) ParseFencedCodeBlock(StringSegment buffer, int paragraphIndex)
     {
         (_, var marker, var language, var trailingTrivia, buffer) = GetFencedCodeBlockStart(buffer);
         int index = 0;
@@ -418,6 +426,52 @@ public static class MarkdownParser
         (trailingTrivia, var remainder) = GatherTrivia(buffer);
         // TODO: Being kind of sloppy here about keeping track of all the various bits of trivia and markers.
         return (new CodeBlock(language, contents, paragraphIndex) { LeadingTrivia = marker, TrailingTrivia = trailingTrivia }, remainder);
+    }
+
+    private static (bool IsPipeTable, StringSegment Remainder) IsPipeTable(StringSegment buffer)
+    {
+        return buffer.StartsWith("|", StringComparison.Ordinal)
+            ? (true, buffer)
+            : (false, buffer);
+    }
+
+    private static bool IsAllDashes(StringSegment segment)
+    {
+        for (int i = 0; i < segment.Length; i++)
+        {
+            var c = segment[i];
+            if (c != '-' && !char.IsWhiteSpace(c))
+                return false;
+        }
+        return true;
+    }
+
+    private static (Paragraph Paragraph, StringSegment Remainder) ParsePipeTable(StringSegment buffer, int paragraphIndex)
+    {
+        (var line, buffer, var lineEnding) = ReadLine(buffer, true);
+        var headerCells = line.Split(['|']).Select(cell => cell.Trim()).ToList();
+        var header = new TableRow(headerCells.Skip(1).Take(headerCells.Count - 2).ToList(), 0) { TrailingTrivia = lineEnding };
+
+        var rows = new List<TableRow>();
+        int count = 0;
+        while (true)
+        {
+            (line, buffer, lineEnding) = ReadLine(buffer, true);
+            if (line.Length == 0)
+                break; // Stop parsing paragraph when we hit a blank line.
+            if (!line.StartsWith("|", StringComparison.Ordinal))
+                break; // Stop parsing paragraph when we hit a line that doesn't start with a pipe.
+
+            var cells = line.Split(['|']).Select(cell => cell.Trim()).ToList();
+            cells = cells.Skip(1).Take(cells.Count - 2).ToList();
+            if (cells.All(IsAllDashes))
+                continue; // Skip the separator line.
+
+            var row = new TableRow(cells, ++count) { TrailingTrivia = lineEnding };
+            rows.Add(row);
+        }
+
+        return (new TableBlock(header, rows, paragraphIndex) { }, buffer);
     }
 
     private static (Heading Heading, StringSegment Remainder) ParseHeading(StringSegment buffer)

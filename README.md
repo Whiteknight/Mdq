@@ -89,7 +89,7 @@ Navigate three levels deep to a named subsection and extract its heading.
 
 ```markdown
 - `# Heading` returns the section with that name from the current context, starting at the root of the document and drilling down one level at a time. For example, to get this text you're reading now, we would use a selector `#Mdq #Execution #Selector Syntax` or the short-hand `###Selector Syntax`
-  - Note that heading names may be `*` as a wildcard so you don't need to specify the entire verbatim text.
+    - Note that heading names may be `*` as a wildcard so you don't need to specify the entire verbatim text.
 ```
 
 Navigate to the Selector Syntax section, get the first paragraph (the bulleted list), and extract the first item.
