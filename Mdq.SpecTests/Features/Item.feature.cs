@@ -207,7 +207,7 @@ namespace Mdq.SpecTests.Features
         await testRunner.WhenAsync("I execute selector \".paragraph(2).item(1)\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 36
-        await testRunner.ThenAsync("The result text should be:", "- Second list, first item", ((global::Reqnroll.Table)(null)), "Then ");
+        await testRunner.ThenAsync("The result text should be:", "* Second list, first item", ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -242,7 +242,7 @@ namespace Mdq.SpecTests.Features
         await testRunner.WhenAsync("I execute selector \".paragraph(2).item(2)\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 43
-        await testRunner.ThenAsync("The result text should be:", "- Second list, second item", ((global::Reqnroll.Table)(null)), "Then ");
+        await testRunner.ThenAsync("The result text should be:", "* Second list, second item", ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();

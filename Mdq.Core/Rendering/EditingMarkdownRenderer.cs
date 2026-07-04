@@ -31,7 +31,8 @@ public sealed class EditingMarkdownRenderer
     {
         _listIndent = 0;
         var sb = new StringBuilder();
-        RenderItems(document.Sections.Cast<MatchableItem>().ToList(), sb);
+        RenderSection(document.TopLevelSection, sb);
+        sb.AppendLine();
         return sb.ToString();
     }
 
@@ -96,11 +97,14 @@ public sealed class EditingMarkdownRenderer
 
     private void RenderSection(Section section, StringBuilder sb)
     {
-        var headingText = IsTarget(section)
-            ? MutatedSectionHeadingText(section)
-            : Str(section.Heading.Text);
+        if (section.Heading.Level > 0)
+        {
+            var headingText = IsTarget(section)
+                ? MutatedSectionHeadingText(section)
+                : Str(section.Heading.Text);
 
-        sb.Append($"{new string('#', section.Heading.Level)} {headingText}").AppendLine().AppendLine();
+            sb.Append($"{new string('#', section.Heading.Level)} {headingText}").AppendLine().AppendLine();
+        }
 
         var children = section.Paragraphs.Cast<MatchableItem>()
             .Concat(section.Children.Cast<MatchableItem>())

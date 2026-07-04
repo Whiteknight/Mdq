@@ -3,6 +3,7 @@ using Mdq.Core.DocumentModel;
 using Mdq.Core.QueryEngine;
 using Mdq.Core.SelectorModel;
 using Mdq.Core.Shared;
+using Microsoft.Extensions.Primitives;
 
 namespace Mdq.Tests.QueryEngine;
 
@@ -50,7 +51,7 @@ public class QueryExecutorTests
     // -------------------------------------------------------------------------
 
     private static MarkdownDocument DocWithSections(params Section[] sections) =>
-        new(sections.ToList());
+        new MarkdownDocument(new Section(new Heading(StringSegment.Empty, 0), [], sections.ToList()));
 
     private static Section SimpleSection(string heading, int level, params string[] paragraphTexts) =>
         new(new Heading(heading, level),
@@ -79,14 +80,14 @@ public class QueryExecutorTests
         var result = ExecuteOk(doc, "");
 
         var resultDoc = result[0].Should().BeOfType<MarkdownDocument>().Which;
-        resultDoc.Sections[0].Heading.Text.Value.Should().Be("Alpha");
-        resultDoc.Sections[1].Heading.Text.Value.Should().Be("Beta");
+        resultDoc.TopLevelSection.Children[0].Heading.Text.Value.Should().Be("Alpha");
+        resultDoc.TopLevelSection.Children[1].Heading.Text.Value.Should().Be("Beta");
     }
 
     [Test]
     public void Execute_EmptyChain_EmptyDocument_ReturnsEmptyString()
     {
-        var doc = new MarkdownDocument([]);
+        var doc = new MarkdownDocument(new Section(new Heading(StringSegment.Empty, 0), [], []));
         var result = ExecuteOk(doc, "");
         result[0].Should().Be(doc);
     }
@@ -387,7 +388,7 @@ public class QueryExecutorTests
         var result = ExecuteOk(doc, "");
 
         result[0].Should().BeOfType<MarkdownDocument>()
-            .Which.Sections.Should().ContainSingle()
+            .Which.TopLevelSection.Children.Should().ContainSingle()
             .Which.Heading.Text.Value.Should().Be("H1");
     }
 
@@ -401,7 +402,7 @@ public class QueryExecutorTests
         var result = ExecuteOk(doc, "");
 
         result[0].Should().BeOfType<MarkdownDocument>()
-            .Which.Sections.Should().ContainSingle()
+            .Which.TopLevelSection.Children.Should().ContainSingle()
             .Which.Paragraphs.Should().ContainSingle()
             .Which.Should().BeOfType<ListBlock>()
             .Which.Items.Should().ContainInOrder(items);
@@ -417,7 +418,7 @@ public class QueryExecutorTests
         var result = ExecuteOk(doc, "");
 
         result[0].Should().BeOfType<MarkdownDocument>()
-            .Which.Sections.Should().ContainSingle()
+            .Which.TopLevelSection.Children.Should().ContainSingle()
             .Which.Paragraphs.Should().ContainSingle()
             .Which.Should().BeOfType<ListBlock>()
             .Which.Items.Should().ContainInOrder(items);
@@ -433,7 +434,7 @@ public class QueryExecutorTests
 
         result.Should().ContainSingle()
             .Which.Should().BeOfType<MarkdownDocument>()
-            .Which.Sections.Should().ContainSingle()
+            .Which.TopLevelSection.Children.Should().ContainSingle()
             .Which.Should().BeOfType<Section>()
             .Which.Paragraphs.Should().ContainSingle()
             .Which.Should().BeOfType<BlockQuote>()

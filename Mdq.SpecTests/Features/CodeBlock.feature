@@ -9,7 +9,7 @@ Rule: Get code block
             """
                 First code block is indented
                 by four spaces
-            
+
             ```
             Second code block is fenced
             but with no language

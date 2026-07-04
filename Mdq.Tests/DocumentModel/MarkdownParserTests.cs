@@ -18,7 +18,7 @@ public class MarkdownParserTests
 
         result.Should().BeOfType<Result<DM.MarkdownDocument, MdqError>.Ok>();
         var ok = (Result<DM.MarkdownDocument, MdqError>.Ok)result;
-        ok.Value.Sections.Should().BeEmpty();
+        ok.Value.TopLevelSection.Children.Should().BeEmpty();
     }
 
     [Test]
@@ -28,12 +28,29 @@ public class MarkdownParserTests
 
         result.Should().BeOfType<Result<DM.MarkdownDocument, MdqError>.Ok>();
         var ok = (Result<DM.MarkdownDocument, MdqError>.Ok)result;
-        ok.Value.Sections.Should().BeEmpty();
+        ok.Value.TopLevelSection.Children.Should().BeEmpty();
     }
 
     // -------------------------------------------------------------------------
     // Req 1.2 -- preamble (content before first heading)
     // -------------------------------------------------------------------------
+
+    [Test]
+    public void Parse_TextWithoutHeading_StoresAsPreambleSection()
+    {
+        const string markdown = """
+            Some introductory text.
+            """;
+
+        var model = ParseOk(markdown);
+
+        var preamble = model.TopLevelSection;
+        preamble.Heading.Text.Value.Should().BeNullOrEmpty();
+        preamble.Heading.Level.Should().Be(0);
+        preamble.Paragraphs.Should().HaveCount(1);
+        preamble.Paragraphs[0].Should().BeOfType<DM.TextBlock>()
+            .Which.Content.Value.Should().Be("Some introductory text.");
+    }
 
     [Test]
     public void Parse_ContentBeforeFirstHeading_StoresAsPreambleSection()
@@ -46,13 +63,13 @@ public class MarkdownParserTests
 
         var model = ParseOk(markdown);
 
-        model.Sections.Should().HaveCount(2);
-        var preamble = model.Sections[0];
-        preamble.Heading.Text.Value.Should().BeNull();
+        var preamble = model.TopLevelSection;
+        preamble.Heading.Text.Value.Should().BeNullOrEmpty();
         preamble.Heading.Level.Should().Be(0);
         preamble.Paragraphs.Should().HaveCount(1);
         preamble.Paragraphs[0].Should().BeOfType<DM.TextBlock>()
             .Which.Content.Value.Should().Be("Some introductory text.");
+        preamble.Children[0].Heading.Text.Value.Should().Be("First Heading");
     }
 
     [Test]
@@ -65,8 +82,7 @@ public class MarkdownParserTests
 
         var model = ParseOk(markdown);
 
-        model.Sections.Should().HaveCount(1);
-        model.Sections[0].Heading.Text.Value.Should().Be("First Heading");
+        model.TopLevelSection.Children[0].Heading.Text.Value.Should().Be("First Heading");
     }
 
     // -------------------------------------------------------------------------
@@ -83,8 +99,7 @@ public class MarkdownParserTests
 
         var model = ParseOk(markdown);
 
-        model.Sections.Should().HaveCount(1);
-        var section = model.Sections[0];
+        var section = model.TopLevelSection.Children[0];
         section.Heading.Text.Value.Should().Be("Alpha");
         section.Heading.Level.Should().Be(1);
         section.Children.Should().BeEmpty();
@@ -103,8 +118,7 @@ public class MarkdownParserTests
 
         var model = ParseOk(markdown);
 
-        model.Sections.Should().HaveCount(1);
-        var parent = model.Sections[0];
+        var parent = model.TopLevelSection.Children[0];
         parent.Heading.Text.Value.Should().Be("Parent");
         parent.Heading.Level.Should().Be(1);
         parent.Children.Should().HaveCount(1);
@@ -128,9 +142,9 @@ public class MarkdownParserTests
 
         var model = ParseOk(markdown);
 
-        model.Sections.Should().HaveCount(2);
-        model.Sections[0].Heading.Text.Value.Should().Be("Alpha");
-        model.Sections[1].Heading.Text.Value.Should().Be("Beta");
+        model.TopLevelSection.Children.Should().HaveCount(2);
+        model.TopLevelSection.Children[0].Heading.Text.Value.Should().Be("Alpha");
+        model.TopLevelSection.Children[1].Heading.Text.Value.Should().Be("Beta");
     }
 
     [Test]
@@ -149,8 +163,8 @@ public class MarkdownParserTests
 
         var model = ParseOk(markdown);
 
-        model.Sections.Should().HaveCount(1);
-        var root = model.Sections[0];
+        var root = model.TopLevelSection.Children[0];
+        root.Heading.Text.Value.Should().Be("Root");
         root.Children.Should().HaveCount(2);
         root.Children[0].Heading.Text.Value.Should().Be("Child A");
         root.Children[1].Heading.Text.Value.Should().Be("Child B");
@@ -168,8 +182,7 @@ public class MarkdownParserTests
 
         var model = ParseOk(markdown);
 
-        model.Sections.Should().HaveCount(1);
-        var h1 = model.Sections[0];
+        var h1 = model.TopLevelSection.Children[0];
         h1.Heading.Level.Should().Be(1);
         h1.Children.Should().HaveCount(1);
 
@@ -190,15 +203,13 @@ public class MarkdownParserTests
     public void Parse_TwoTextBlocksSeparatedByBlankLine_ProducesTwoParagraphs()
     {
         const string markdown = """
-            # Section
-
             First block.
 
             Second block.
             """;
 
         var model = ParseOk(markdown);
-        var section = model.Sections[0];
+        var section = model.TopLevelSection;
 
         section.Paragraphs.Should().HaveCount(2);
         section.Paragraphs[0].Should().BeOfType<DM.TextBlock>()
@@ -211,8 +222,6 @@ public class MarkdownParserTests
     public void Parse_ThreeTextBlocks_ProducesThreeParagraphs()
     {
         const string markdown = """
-            # Section
-
             One.
 
             Two.
@@ -221,7 +230,7 @@ public class MarkdownParserTests
             """;
 
         var model = ParseOk(markdown);
-        model.Sections[0].Paragraphs.Should().HaveCount(3);
+        model.TopLevelSection.Paragraphs.Should().HaveCount(3);
     }
 
     // -------------------------------------------------------------------------
@@ -232,14 +241,13 @@ public class MarkdownParserTests
     public void Parse_BulletedList_ProducesSingleListBlockWithCorrectItems()
     {
         const string markdown = """
-            # Section
             - Alpha
             - Beta
             - Gamma
             """;
 
         var model = ParseOk(markdown);
-        var section = model.Sections[0];
+        var section = model.TopLevelSection;
 
         section.Paragraphs.Should().HaveCount(1);
         var listBlock = section.Paragraphs[0].Should().BeOfType<DM.ListBlock>().Subject;
@@ -254,14 +262,13 @@ public class MarkdownParserTests
     public void Parse_NumberedList_ProducesSingleListBlockWithNumberedKind()
     {
         const string markdown = """
-            # Section
             1. First
             2. Second
             3. Third
             """;
 
         var model = ParseOk(markdown);
-        var listBlock = model.Sections[0].Paragraphs[0].Should().BeOfType<DM.ListBlock>().Subject;
+        var listBlock = model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.ListBlock>().Subject;
         listBlock.Kind.Should().Be(DM.ListKind.Numbered);
         listBlock.Items.Should().HaveCount(3);
         listBlock.Items[0].Content.Value.Should().Be("First");
@@ -277,7 +284,6 @@ public class MarkdownParserTests
     public void Parse_NestedSubList_PopulatesListItemSubList()
     {
         const string markdown = """
-            # Section
             - Parent item
               - Child one
               - Child two
@@ -285,7 +291,7 @@ public class MarkdownParserTests
             """;
 
         var model = ParseOk(markdown);
-        var listBlock = model.Sections[0].Paragraphs[0].Should().BeOfType<DM.ListBlock>().Subject;
+        var listBlock = model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.ListBlock>().Subject;
 
         listBlock.Items.Should().HaveCount(2);
 
@@ -307,12 +313,11 @@ public class MarkdownParserTests
     public void Parse_BlockQuote_ProducesBlockQuoteParagraph()
     {
         const string markdown = """
-            # Section
             > This is a quote.
             """;
 
         var model = ParseOk(markdown);
-        var section = model.Sections[0];
+        var section = model.TopLevelSection;
 
         section.Paragraphs.Should().HaveCount(1);
         section.Paragraphs[0].Should().BeOfType<DM.BlockQuote>()
@@ -323,7 +328,6 @@ public class MarkdownParserTests
     public void Parse_BlockQuoteAmongOtherParagraphs_CorrectlyIdentified()
     {
         const string markdown = """
-            # Section
             Before quote.
 
             > Quoted text.
@@ -332,7 +336,7 @@ public class MarkdownParserTests
             """;
 
         var model = ParseOk(markdown);
-        var paragraphs = model.Sections[0].Paragraphs;
+        var paragraphs = model.TopLevelSection.Paragraphs;
 
         paragraphs.Should().HaveCount(3);
         paragraphs[0].Should().BeOfType<DM.TextBlock>();
@@ -344,12 +348,11 @@ public class MarkdownParserTests
     public void Parse_TextMarkup_CorrectlyIncluded()
     {
         const string markdown = """
-            # Section
             Plain text **bold text** *italic text* `code` _underline_ ~~strikethrough~~ normal text.
             """;
 
         var model = ParseOk(markdown);
-        var paragraphs = model.Sections[0].Paragraphs;
+        var paragraphs = model.TopLevelSection.Paragraphs;
 
         paragraphs.Should().HaveCount(1);
         paragraphs[0].Should().BeOfType<DM.TextBlock>()

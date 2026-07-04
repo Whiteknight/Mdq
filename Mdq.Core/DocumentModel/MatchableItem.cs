@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Primitives;
 
@@ -5,13 +6,15 @@ namespace Mdq.Core.DocumentModel;
 
 public abstract record MatchableItem
 {
+    [DebuggerHidden]
     public StringSegment LeadingTrivia { get; init; }
+    [DebuggerHidden]
     public StringSegment TrailingTrivia { get; init; }
 
     public abstract bool IsMatch(string property, string op, string value);
 }
 
-public record MarkdownDocument(List<Section> Sections) : MatchableItem
+public record MarkdownDocument(Section TopLevelSection) : MatchableItem
 {
     public override bool IsMatch(string property, string op, string value)
     {
@@ -133,14 +136,14 @@ public sealed record BlockQuote(StringSegment Content, int Index) : Paragraph(In
     }
 }
 
-public sealed record CodeBlock(string? Language, StringSegment Content, int Index) : Paragraph(Index)
+public sealed record CodeBlock(StringSegment Language, StringSegment Content, int Index) : Paragraph(Index)
 {
     public override bool IsMatch(string property, string op, string value)
     {
         return (property, op, value) switch
         {
             ("type", "=", "codeblock") => true,
-            ("lang", "=", _) => (string.IsNullOrEmpty(Language) && string.IsNullOrEmpty(value)) || value.Equals(Language, StringComparison.OrdinalIgnoreCase),
+            ("lang", "=", _) => string.IsNullOrEmpty(value) || value.Equals(Language, StringComparison.OrdinalIgnoreCase),
             _ => false
         };
     }
@@ -174,7 +177,7 @@ public record ListItem(
     StringSegment Content,
     ListKind Kind,
     int Index,
-    ListBlock? SubList) : MatchableItem
+    ListBlock? SubList = null) : MatchableItem
 {
     public override bool IsMatch(string property, string op, string value)
     {

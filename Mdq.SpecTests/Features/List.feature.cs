@@ -137,8 +137,8 @@ namespace Mdq.SpecTests.Features
         await testRunner.WhenAsync("I execute selector \".text[kind=bullet]\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 22
-        await testRunner.ThenAsync("The result text should be:", "- First list, first item\r\n- First list, second item\r\n\r\n- Third list, first item\r\n" +
-                        "- Third list, second item", ((global::Reqnroll.Table)(null)), "Then ");
+        await testRunner.ThenAsync("The result text should be:", "- First list, first item\r\n- First list, second item\r\n\r\n* Third list, first item\r\n" +
+                        "* Third list, second item", ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();

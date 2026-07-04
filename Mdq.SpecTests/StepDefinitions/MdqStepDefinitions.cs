@@ -35,6 +35,6 @@ public sealed record MdqStepDefinitions(ScenarioContext Context)
     public void TheResultTextShouldBe(string expected)
     {
         var output = Context.Get<string>("output");
-        output.Should().Be(expected.Trim());
+        output.Trim().Should().Be(expected.Trim());
     }
 }

@@ -2,7 +2,7 @@ using AwesomeAssertions;
 using Mdq.Core.DocumentModel;
 using Mdq.Core.Editing;
 using Mdq.Core.Rendering;
-using Mdq.Core.Shared;
+using Microsoft.Extensions.Primitives;
 
 namespace Mdq.Tests.Rendering;
 
@@ -22,7 +22,7 @@ public class EditingMarkdownRendererTests
         where T : Paragraph
     {
         var section = new Section(new Heading("Section", 1), [paragraph], []);
-        var doc = new MarkdownDocument([section]);
+        var doc = new MarkdownDocument(section);
         return (doc, paragraph);
     }
 
@@ -34,7 +34,8 @@ public class EditingMarkdownRendererTests
     {
         var sibling = new Section(new Heading("Sibling", 1), [new TextBlock("sibling body", 1)], []);
         var target = new Section(new Heading("Target", 1), [new TextBlock("target body", 1)], []);
-        var doc = new MarkdownDocument([sibling, target]);
+        var doc = new MarkdownDocument(
+            new Section(new Heading(StringSegment.Empty, 0), [], [sibling, target]));
         return (doc, target, sibling);
     }
 
@@ -270,7 +271,7 @@ public class EditingMarkdownRendererTests
     public void Set_Section_ReplacesHeadingText()
     {
         var section = new Section(new Heading("Old Title", 2), [], []);
-        var doc = new MarkdownDocument([section]);
+        var doc = new MarkdownDocument(section);
 
         var output = Render(doc, section, new Set("New Title"));
 
@@ -282,7 +283,7 @@ public class EditingMarkdownRendererTests
     public void Set_Section_PreservesHeadingLevel()
     {
         var section = new Section(new Heading("Title", 3), [], []);
-        var doc = new MarkdownDocument([section]);
+        var doc = new MarkdownDocument(section);
 
         var output = Render(doc, section, new Set("Renamed"));
 
@@ -296,7 +297,7 @@ public class EditingMarkdownRendererTests
     {
         var body = new TextBlock("body text", 1);
         var section = new Section(new Heading("Old", 1), [body], []);
-        var doc = new MarkdownDocument([section]);
+        var doc = new MarkdownDocument(section);
 
         var output = Render(doc, section, new Set("New"));
 
@@ -327,7 +328,7 @@ public class EditingMarkdownRendererTests
     public void Set_SyntheticTextBlock_WrappingSection_ReplacesHeadingText()
     {
         var section = new Section(new Heading("Old Heading", 1), [], []);
-        var doc = new MarkdownDocument([section]);
+        var doc = new MarkdownDocument(section);
 
         var synthetic = new SyntheticTextBlock("Old Heading", 1, section);
 
@@ -347,7 +348,7 @@ public class EditingMarkdownRendererTests
         var sibling = new TextBlock("sibling content", 1);
         var target = new TextBlock("target content", 2);
         var section = new Section(new Heading("S", 1), [sibling, target], []);
-        var doc = new MarkdownDocument([section]);
+        var doc = new MarkdownDocument(section);
 
         var output = Render(doc, target, new Set("mutated"));
 
@@ -360,7 +361,7 @@ public class EditingMarkdownRendererTests
     public void NonTargetedSiblingSection_IsRenderedUnchanged()
     {
         var (doc, _, sibling) = DocWithTwoSections();
-        var targetSection = doc.Sections[1];
+        var targetSection = doc.TopLevelSection.Children[1];
 
         var output = Render(doc, targetSection, new Set("Renamed Target"));
 
@@ -396,8 +397,8 @@ public class EditingMarkdownRendererTests
         var rendered = Render(doc, target, new Add("world"));
         var reparsed = ParseOk(rendered);
 
-        reparsed.Sections.Should().HaveCount(1);
-        var para = reparsed.Sections[0].Paragraphs[0].Should().BeOfType<TextBlock>().Subject;
+        reparsed.TopLevelSection.Children.Should().HaveCount(1);
+        var para = reparsed.TopLevelSection.Children[0].Paragraphs[0].Should().BeOfType<TextBlock>().Subject;
         para.Content.Value.Should().Be("Hello world");
     }
 
@@ -411,7 +412,7 @@ public class EditingMarkdownRendererTests
         var rendered = Render(doc, target, new Add("b"));
         var reparsed = ParseOk(rendered);
 
-        var list = reparsed.Sections[0].Paragraphs[0].Should().BeOfType<ListBlock>().Subject;
+        var list = reparsed.TopLevelSection.Children[0].Paragraphs[0].Should().BeOfType<ListBlock>().Subject;
         list.Items.Should().HaveCount(2);
         list.Items[1].Content.Value.Should().Be("b");
     }
@@ -420,13 +421,13 @@ public class EditingMarkdownRendererTests
     public void RoundTrip_Set_Section_ParsedDocumentHasNewHeadingText()
     {
         var section = new Section(new Heading("Original", 2), [], []);
-        var doc = new MarkdownDocument([section]);
+        var doc = new MarkdownDocument(section);
 
         var rendered = Render(doc, section, new Set("Updated"));
         var reparsed = ParseOk(rendered);
 
-        reparsed.Sections[0].Heading.Text.Value.Should().Be("Updated");
-        reparsed.Sections[0].Heading.Level.Should().Be(2);
+        reparsed.TopLevelSection.Children[0].Heading.Text.Value.Should().Be("Updated");
+        reparsed.TopLevelSection.Children[0].Heading.Level.Should().Be(2);
     }
 
     [Test]
@@ -439,7 +440,7 @@ public class EditingMarkdownRendererTests
         var rendered = Render(doc, item, new Set("after"));
         var reparsed = ParseOk(rendered);
 
-        var list = reparsed.Sections[0].Paragraphs[0].Should().BeOfType<ListBlock>().Subject;
+        var list = reparsed.TopLevelSection.Children[0].Paragraphs[0].Should().BeOfType<ListBlock>().Subject;
         list.Items[0].Content.Value.Should().Be("after");
     }
 
@@ -452,7 +453,7 @@ public class EditingMarkdownRendererTests
         var rendered = Render(doc, target, new Add("line2"));
         var reparsed = ParseOk(rendered);
 
-        var code = reparsed.Sections[0].Paragraphs[0].Should().BeOfType<CodeBlock>().Subject;
+        var code = reparsed.TopLevelSection.Children[0].Paragraphs[0].Should().BeOfType<CodeBlock>().Subject;
         // AppendLine uses Environment.NewLine; the parser trims and normalises line endings
         code.Content.Value.Should().ContainAll("line1", "line2");
         code.Content.Value.Should().Contain("line1");

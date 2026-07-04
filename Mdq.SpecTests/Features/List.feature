@@ -24,8 +24,8 @@ Rule: Filter lists by kind
             - First list, first item
             - First list, second item
 
-            - Third list, first item
-            - Third list, second item
+            * Third list, first item
+            * Third list, second item
             """
 
     Scenario: Kind = numbered

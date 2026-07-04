@@ -35,14 +35,14 @@ Rule: Get list items by index
         When I execute selector ".paragraph(2).item(1)"
         Then The result text should be:
             """
-            - Second list, first item
+            * Second list, first item
             """
 
     Scenario: I can get paragraph(2), item(2)
         When I execute selector ".paragraph(2).item(2)"
         Then The result text should be:
             """
-            - Second list, second item
+            * Second list, second item
             """
 
     Scenario: I can get paragraph(3), item(1)
