@@ -91,10 +91,12 @@ public static class MarkdownParser
         if (!includeLineEnding)
             return (line, remainder, StringSegment.Empty);
 
-        if (index + 1 < buffer.Length && buffer[index] == '\n')
+        if (index < buffer.Length && buffer[index] == '\n')
             return (line, remainder.Subsegment(1), remainder.Subsegment(0, 1));
-        if (index + 2 < buffer.Length && buffer[index] == '\r' && buffer[index + 1] == '\n')
+        if (index + 1 < buffer.Length && buffer[index] == '\r' && buffer[index + 1] == '\n')
             return (line, remainder.Subsegment(2), remainder.Subsegment(0, 2));
+        if (index < buffer.Length && buffer[index] == '\r')
+            return (line, remainder.Subsegment(1), remainder.Subsegment(0, 1));
         return (line, remainder, StringSegment.Empty);
     }
 
@@ -113,7 +115,7 @@ public static class MarkdownParser
     {
         var paragraphs = new List<Paragraph>();
         int paragraphIndex = 1;
-        while (!IsAtEnd(buffer) || !IsEntirelyWhitespace(buffer))
+        while (!IsAtEnd(buffer) && !IsEntirelyWhitespace(buffer))
         {
             var (line, remainder, _) = ReadLine(buffer, true);
             if (line.Length == 0)
@@ -571,7 +573,7 @@ public static class MarkdownParser
     private static (List<Section> Sections, StringSegment Remainder) ParseSections(StringSegment buffer, int currentLevel)
     {
         var sections = new List<Section>();
-        while (!IsAtEnd(buffer) || !IsEntirelyWhitespace(buffer))
+        while (!IsAtEnd(buffer) && !IsEntirelyWhitespace(buffer))
         {
             var (markers, _) = CountHeadingMarkers(buffer);
             if (markers == 0 || markers < currentLevel)
