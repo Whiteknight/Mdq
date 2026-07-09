@@ -158,6 +158,9 @@ public static class MarkdownParser
             return (false, 0, StringSegment.Empty);
 
         index++;
+        if (index >= buffer.Length)
+            return (true, indent, buffer.Subsegment(0, index));
+
         if (buffer[index] != ' ' && buffer[index] != '\n' && buffer[index] != '\r')
             return (false, 0, StringSegment.Empty);
 
@@ -328,23 +331,33 @@ public static class MarkdownParser
         int count = 0;
         while (!IsAtEnd(buffer))
         {
-            var (hasBullet, ind, _) = GetUnorderedListMarker(buffer);
-            if (!hasBullet)
-                break;
-
-            // Stop parsing paragraph when we hit a list item with less indentation.
-            if (ind < indent)
-                break;
-            if (ind > indent)
+            var (hasBullet, thisLineIndent, _) = GetUnorderedListMarker(buffer);
+            if (hasBullet)
             {
-                (var sublist, buffer) = ParseUnorderedList(buffer, paragraphIndex, ind);
+                // Stop parsing paragraph when we hit a list item with less indentation.
+                if (thisLineIndent < indent)
+                    break;
+                if (thisLineIndent > indent)
+                {
+                    (var sublist, buffer) = ParseUnorderedList(buffer, paragraphIndex, thisLineIndent);
+                    items[^1] = items[^1] with { SubList = sublist };
+                    continue;
+                }
+
+                (var item, buffer) = ParseUnorderedListItem(buffer, ++count);
+                items.Add(item);
+                continue;
+            }
+
+            (var hasOrderedList, thisLineIndent, _) = GetOrderedListMarker(buffer);
+            if (hasOrderedList && thisLineIndent > indent)
+            {
+                (var sublist, buffer) = ParseOrderedList(buffer, paragraphIndex, thisLineIndent);
                 items[^1] = items[^1] with { SubList = sublist };
                 continue;
             }
-            // TODO: Also need to parse nested OrderedList inside this unordered list item.
 
-            (var item, buffer) = ParseUnorderedListItem(buffer, ++count);
-            items.Add(item);
+            break;
         }
         return (new ListBlock(ListKind.Bulleted, items, paragraphIndex), buffer);
     }
@@ -363,21 +376,36 @@ public static class MarkdownParser
         int count = 0;
         while (!IsAtEnd(buffer))
         {
-            var (ok, ind, _) = GetOrderedListMarker(buffer);
-            if (!ok)
-                break;
-            if (ind < indent)
-                break; // Stop parsing paragraph when we hit a list item with less indentation.
-            if (ind > indent)
+            var (hasOrderedList, thisLineIndent, _) = GetOrderedListMarker(buffer);
+            if (hasOrderedList)
             {
-                (var sublist, buffer) = ParseOrderedList(buffer, paragraphIndex, ind);
+                // Stop parsing paragraph when we hit a list item with less indentation.
+                if (thisLineIndent < indent)
+                    break;
+
+                // If we have a higher indent than previous lines, we're starting a new sublist
+                if (thisLineIndent > indent)
+                {
+                    (var sublist, buffer) = ParseOrderedList(buffer, paragraphIndex, thisLineIndent);
+                    items[^1] = items[^1] with { SubList = sublist };
+                    continue;
+                }
+
+                (var item, buffer) = ParseOrderedListItem(buffer, ++count);
+                items.Add(item);
+                continue;
+            }
+
+            // We're starting an unordered list. Check to see if it's a sublist or not
+            (var hasBullet, thisLineIndent, _) = GetUnorderedListMarker(buffer);
+            if (hasBullet && thisLineIndent > indent)
+            {
+                (var sublist, buffer) = ParseUnorderedList(buffer, paragraphIndex, thisLineIndent);
                 items[^1] = items[^1] with { SubList = sublist };
                 continue;
             }
-            // TODO: Need to handle nested unordered list inside ordered list item.
 
-            (var item, buffer) = ParseOrderedListItem(buffer, ++count);
-            items.Add(item);
+            break;
         }
         return (new ListBlock(ListKind.Numbered, items, paragraphIndex), buffer);
     }
