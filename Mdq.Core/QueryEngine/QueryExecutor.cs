@@ -222,20 +222,21 @@ public static class QueryExecutor
 
     private static List<MatchableItem> ResolveDotCell(Selector.CellAt cellSeg, List<MatchableItem> items)
         => items
-            .SelectMany(i => i switch
+            .SelectMany<MatchableItem, MatchableItem>(i => i switch
             {
                 TableRow tr when cellSeg.Index >= 1 && cellSeg.Index <= tr.Cells.Count
-                    => [new SyntheticTextBlock(tr.Cells[cellSeg.Index - 1], 1, tr)],
+                    => [tr.Cells[cellSeg.Index - 1]],
                 TableBlock tb when cellSeg.Index >= 1 && cellSeg.Index <= tb.Header.Cells.Count
-                    => tb.Rows.Select(r => (MatchableItem)new SyntheticTextBlock(r.Cells[cellSeg.Index - 1], 1, r)),
+                    => tb.Rows.Select(r => r.Cells[cellSeg.Index - 1]),
                 MarkdownDocument md
-                => md.TopLevelSection.Paragraphs.OfType<TableBlock>()
-                    .Concat(md.TopLevelSection.Children.SelectMany(s => s.Paragraphs).OfType<TableBlock>())
-                    .Where(tb => cellSeg.Index >= 1 && cellSeg.Index <= tb.Header.Cells.Count)
-                    .SelectMany(tb => tb.Rows.Select(r => (MatchableItem)new SyntheticTextBlock(r.Cells[cellSeg.Index - 1], 1, r) { TrailingTrivia = Environment.NewLine })),
-                Section s => s.Paragraphs.OfType<TableBlock>()
-                    .Where(tb => cellSeg.Index >= 1 && cellSeg.Index <= tb.Header.Cells.Count)
-                    .SelectMany(tb => tb.Rows.Select(r => (MatchableItem)new SyntheticTextBlock(r.Cells[cellSeg.Index - 1], 1, r) { TrailingTrivia = Environment.NewLine })),
+                    => md.TopLevelSection.Paragraphs.OfType<TableBlock>()
+                        .Concat(md.TopLevelSection.Children.SelectMany(s => s.Paragraphs).OfType<TableBlock>())
+                        .Where(tb => cellSeg.Index >= 1 && cellSeg.Index <= tb.Header.Cells.Count)
+                        .SelectMany(tb => tb.Rows.Select(r => r.Cells[cellSeg.Index - 1])),
+                Section s
+                    => s.Paragraphs.OfType<TableBlock>()
+                        .Where(tb => cellSeg.Index >= 1 && cellSeg.Index <= tb.Header.Cells.Count)
+                        .SelectMany(tb => tb.Rows.Select(r => r.Cells[cellSeg.Index - 1])),
                 _ => []
             })
             .ToList();

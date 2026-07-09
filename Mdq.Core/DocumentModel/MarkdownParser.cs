@@ -65,9 +65,19 @@ public static class MarkdownParser
 
     private static (int Count, StringSegment Remainder) CountHeadingMarkers(StringSegment buffer)
     {
+        // Heading: One or more '#', a space, and then the remainder of the text on that line
+        // The number of '#' characters indicates the heading level.
         int count = 0;
         while (count < buffer.Length && buffer[count] == '#')
             count++;
+
+        // 7 or more hashes is not a valid heading, by spec
+        if (count >= 7)
+            return (0, buffer);
+
+        // A '#' must be followed by a space EXCEPT a bare '#' or sequence on a line by itself, which is a valid heading with empty text.
+        if (count < buffer.Length && buffer[count] != ' ')
+            return (0, buffer);
         return (count, buffer.Subsegment(count));
     }
 
@@ -130,8 +140,10 @@ public static class MarkdownParser
         return index;
     }
 
-    private static (int BulletCount, int Indent, StringSegment LeadingTrivia) GetUnorderedListMarker(StringSegment buffer)
+    private static (bool HasBullet, int Indent, StringSegment LeadingTrivia) GetUnorderedListMarker(StringSegment buffer)
     {
+        // An unordered line item is an arbitrary indent, followed by exactly one of ('-', '+', '*')
+        // followed by one or more spaces.
         int index = 0;
         int indent = 0;
         while (index < buffer.Length && (buffer[index] == ' ' || buffer[index] == '\t'))
@@ -140,20 +152,18 @@ public static class MarkdownParser
             indent++;
         }
         if (index >= buffer.Length)
-            return (0, 0, StringSegment.Empty);
+            return (false, 0, StringSegment.Empty);
 
-        int bulletCount = 0;
-        while (index < buffer.Length && (buffer[index] == '-' || buffer[index] == '*' || buffer[index] == '+'))
-        {
-            index++;
-            bulletCount++;
-        }
-        if (bulletCount == 0)
-            return (0, 0, StringSegment.Empty);
+        if (buffer[index] != '-' && buffer[index] != '*' && buffer[index] != '+')
+            return (false, 0, StringSegment.Empty);
+
+        index++;
+        if (buffer[index] != ' ' && buffer[index] != '\n' && buffer[index] != '\r')
+            return (false, 0, StringSegment.Empty);
 
         while (index < buffer.Length && (buffer[index] == ' ' || buffer[index] == '\t'))
             index++;
-        return (bulletCount, indent, buffer.Subsegment(0, index));
+        return (true, indent, buffer.Subsegment(0, index));
     }
 
     private static (bool HasNumber, int Indent, StringSegment LeadingTrivia) GetOrderedListMarker(StringSegment buffer)
@@ -186,14 +196,35 @@ public static class MarkdownParser
         return (true, indent, buffer.Subsegment(0, index));
     }
 
+    private static bool StartsNewBlock(StringSegment line)
+        => CountHeadingMarkers(line).Count > 0
+        || CountBlockQuoteMarkers(line) > 0
+        || GetUnorderedListMarker(line).HasBullet
+        || GetOrderedListMarker(line).HasNumber
+        || GetFencedCodeBlockStart(line).IsCodeBlock
+        || IsPipeTable(line).IsPipeTable;
+
     private static (Paragraph Paragraph, StringSegment Remainder) ParseParagraph(StringSegment buffer, int paragraphIndex)
     {
         // TODO: This only covers the simple textblock case, it doesn't cover lists, block quotes, code blocks, or tables. Those will need to be handled separately.
         Paragraph? paragraph = null;
         StringSegment remainder;
 
-        // TODO: UnorderedList, OrderedList, CodeBlock, Table.
-        // TODO: Ordered and Unordered lists are identified by their indentation, so a list starting with different indentation is a new list.
+        var (hasIndentedCodeBlock, _, _) = GetIndentedCodeBlockStart(buffer);
+        if (hasIndentedCodeBlock)
+        {
+            (paragraph, remainder) = ParseIndentedCodeBlock(buffer, paragraphIndex);
+            (var trailing, remainder) = GatherTrivia(remainder);
+            return (paragraph with { TrailingTrivia = trailing }, remainder);
+        }
+
+        if (!StartsNewBlock(buffer))
+        {
+            (paragraph, remainder) = ParseTextBlock(buffer, paragraphIndex);
+            (var trailing, remainder) = GatherTrivia(remainder);
+            return (paragraph with { TrailingTrivia = trailing }, remainder);
+        }
+
         if (CountBlockQuoteMarkers(buffer) > 0)
         {
             (paragraph, remainder) = ParseBlockQuote(buffer, paragraphIndex);
@@ -201,10 +232,10 @@ public static class MarkdownParser
             return (paragraph with { TrailingTrivia = trailing }, remainder);
         }
 
-        var (bullets, indents, _) = GetUnorderedListMarker(buffer);
-        if (bullets > 0)
+        var (hasBullet, indents, _) = GetUnorderedListMarker(buffer);
+        if (hasBullet)
         {
-            (paragraph, remainder) = ParseUnorderedList(buffer, paragraphIndex, indents, bullets);
+            (paragraph, remainder) = ParseUnorderedList(buffer, paragraphIndex, indents);
             (var trailing, remainder) = GatherTrivia(remainder);
             return (paragraph with { TrailingTrivia = trailing }, remainder);
         }
@@ -221,14 +252,6 @@ public static class MarkdownParser
         if (hasFencedCodeBlock)
         {
             (paragraph, remainder) = ParseFencedCodeBlock(buffer, paragraphIndex);
-            (var trailing, remainder) = GatherTrivia(remainder);
-            return (paragraph with { TrailingTrivia = trailing }, remainder);
-        }
-
-        var (hasIndentedCodeBlock, _, _) = GetIndentedCodeBlockStart(buffer);
-        if (hasIndentedCodeBlock)
-        {
-            (paragraph, remainder) = ParseIndentedCodeBlock(buffer, paragraphIndex);
             (var trailing, remainder) = GatherTrivia(remainder);
             return (paragraph with { TrailingTrivia = trailing }, remainder);
         }
@@ -286,10 +309,10 @@ public static class MarkdownParser
         while (!IsAtEnd(remainder))
         {
             (var line, remainder, var trivia) = ReadLine(remainder, true);
-            if (IsEntirelyWhitespace(line))
-                break; // Stop parsing paragraph when we hit a blank line.
-            if (CountHeadingMarkers(line).Count > 0)
-                break; // Stop parsing paragraph when we hit a heading.
+
+            // Stop parsing paragraph when we hit a blank line or when we've started some new type of block
+            if (IsEntirelyWhitespace(line) || StartsNewBlock(line))
+                break;
 
             totalLength += line.Length + previousTrivia.Length;
             previousTrivia = trivia;
@@ -299,34 +322,36 @@ public static class MarkdownParser
         return (new TextBlock(totalSegment, paragraphIndex), buffer);
     }
 
-    private static (ListBlock Paragraph, StringSegment Remainder) ParseUnorderedList(StringSegment buffer, int paragraphIndex, int indent, int markerCount)
+    private static (ListBlock Paragraph, StringSegment Remainder) ParseUnorderedList(StringSegment buffer, int paragraphIndex, int indent)
     {
         var items = new List<ListItem>();
         int count = 0;
         while (!IsAtEnd(buffer))
         {
-            var (mc, ind, _) = GetUnorderedListMarker(buffer);
-            if (mc != markerCount)
+            var (hasBullet, ind, _) = GetUnorderedListMarker(buffer);
+            if (!hasBullet)
                 break;
+
+            // Stop parsing paragraph when we hit a list item with less indentation.
             if (ind < indent)
-                break; // Stop parsing paragraph when we hit a list item with less indentation.
+                break;
             if (ind > indent)
             {
-                (var sublist, buffer) = ParseUnorderedList(buffer, paragraphIndex, ind, mc);
+                (var sublist, buffer) = ParseUnorderedList(buffer, paragraphIndex, ind);
                 items[^1] = items[^1] with { SubList = sublist };
                 continue;
             }
             // TODO: Also need to parse nested OrderedList inside this unordered list item.
 
-            (var item, buffer) = ParseUnorderedListItem(buffer, mc, ++count);
+            (var item, buffer) = ParseUnorderedListItem(buffer, ++count);
             items.Add(item);
         }
         return (new ListBlock(ListKind.Bulleted, items, paragraphIndex), buffer);
     }
 
-    private static (ListItem Item, StringSegment Remainder) ParseUnorderedListItem(StringSegment buffer, int level, int index)
+    private static (ListItem Item, StringSegment Remainder) ParseUnorderedListItem(StringSegment buffer, int index)
     {
-        var (count, indent, leadingTrivia) = GetUnorderedListMarker(buffer);
+        var (hasBullet, indent, leadingTrivia) = GetUnorderedListMarker(buffer);
         buffer = buffer.Subsegment(leadingTrivia.Length);
         (var line, buffer, var lineEnding) = ReadLine(buffer, true);
         return (new ListItem(line, ListKind.Bulleted, index) { LeadingTrivia = leadingTrivia, TrailingTrivia = lineEnding }, buffer);
@@ -449,8 +474,9 @@ public static class MarkdownParser
     private static (Paragraph Paragraph, StringSegment Remainder) ParsePipeTable(StringSegment buffer, int paragraphIndex)
     {
         (var line, buffer, var lineEnding) = ReadLine(buffer, true);
-        var headerCells = line.Split(['|']).Select(cell => cell.Trim()).ToList();
-        var header = new TableRow(headerCells.Skip(1).Take(headerCells.Count - 2).ToList(), 0) { TrailingTrivia = lineEnding };
+        var rawHeaderCells = line.Split(['|']).Select(cell => cell.Trim()).ToList();
+        var headerCells = rawHeaderCells.Skip(1).Take(rawHeaderCells.Count - 2).Select((c, i) => new TableCell(c, i + 1)).ToList();
+        var header = new TableRow(headerCells, 0) { TrailingTrivia = lineEnding };
 
         var rows = new List<TableRow>();
         int count = 0;
@@ -462,10 +488,10 @@ public static class MarkdownParser
             if (!line.StartsWith("|", StringComparison.Ordinal))
                 break; // Stop parsing paragraph when we hit a line that doesn't start with a pipe.
 
-            var cells = line.Split(['|']).Select(cell => cell.Trim()).ToList();
-            cells = cells.Skip(1).Take(cells.Count - 2).ToList();
-            if (cells.All(IsAllDashes))
+            var rawCells = line.Split(['|']).Select(cell => cell.Trim()).ToList();
+            if (rawCells.All(IsAllDashes))
                 continue; // Skip the separator line.
+            var cells = rawCells.Skip(1).Take(rawCells.Count - 2).Select((c, i) => new TableCell(c, i + 1)).ToList();
 
             var row = new TableRow(cells, ++count) { TrailingTrivia = lineEnding };
             rows.Add(row);
@@ -488,6 +514,15 @@ public static class MarkdownParser
         var remainder = buffer.Subsegment(index);
 
         (var line, remainder, var _) = ReadLine(remainder, false);
+
+        // Trim trailing whitespace and '#' characters
+        // '## HEADING ##' is the same as '## HEADING', so we strip off the trailing hashes.
+        // I do not confirm that the leading and trailing hashes match.
+        int rIndex = line.Length - 1;
+        while (rIndex >= 0 && (char.IsWhiteSpace(line[rIndex]) || line[rIndex] == '#'))
+            rIndex--;
+        line = line.Subsegment(0, rIndex + 1);
+        // TODO: Should we include trailing hashes in the trailing trivia?
         (var trailingTrivia, remainder) = GatherTrivia(remainder);
         return (new Heading(line, hashes) { LeadingTrivia = leading, TrailingTrivia = trailingTrivia }, remainder);
     }

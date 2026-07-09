@@ -149,7 +149,7 @@ public sealed record CodeBlock(StringSegment Language, StringSegment Content, in
     }
 }
 
-public sealed record TableRow(IReadOnlyList<StringSegment> Cells, int Index) : MatchableItem
+public sealed record TableRow(IReadOnlyList<TableCell> Cells, int Index) : MatchableItem
 {
     public override bool IsMatch(string property, string op, string value)
     {
@@ -168,6 +168,18 @@ public sealed record TableBlock(TableRow Header, IReadOnlyList<TableRow> Rows, i
         return (property, op, value) switch
         {
             ("type", "=", "table") => true,
+            _ => false
+        };
+    }
+}
+
+public sealed record TableCell(StringSegment Content, int Index) : MatchableItem
+{
+    public override bool IsMatch(string property, string op, string value)
+    {
+        return (property, op, value) switch
+        {
+            ("type", "=", "tablecell") => true,
             _ => false
         };
     }

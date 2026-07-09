@@ -68,6 +68,10 @@ public class MarkdownRenderer : IRenderer
             case TableBlock tb:
                 RenderTableBlock(tb, sb);
                 break;
+
+            case TableCell tc:
+                RenderTableCell(tc, sb);
+                break;
         }
     }
 
@@ -132,7 +136,7 @@ public class MarkdownRenderer : IRenderer
     private static void RenderTableRow(TableRow tr, StringBuilder sb)
     {
         foreach (var cell in tr.Cells)
-            sb.Append($"| {Str(cell)} ");
+            sb.Append($"| {Str(cell.Content)} ");
         sb.Append("|");
     }
 
@@ -143,7 +147,7 @@ public class MarkdownRenderer : IRenderer
         {
             var cell = tr.Cells[i];
             sb.Append("| ");
-            var str = Str(cell);
+            var str = Str(cell.Content);
             sb.Append(str);
             sb.Append(new string(' ', cellWidths[i] - str.Length));
             sb.Append(" ");
@@ -156,15 +160,15 @@ public class MarkdownRenderer : IRenderer
     {
         AppendSegment(sb, tb.LeadingTrivia);
 
-        var widths = tb.Header.Cells.Select(c => c.Length).ToList();
+        var widths = tb.Header.Cells.Select(c => c.Content.Length).ToList();
         foreach (var row in tb.Rows)
         {
             for (int i = 0; i < row.Cells.Count; i++)
             {
                 if (i < widths.Count)
-                    widths[i] = Math.Max(widths[i], row.Cells[i].Length);
+                    widths[i] = Math.Max(widths[i], row.Cells[i].Content.Length);
                 else
-                    widths.Add(row.Cells[i].Length);
+                    widths.Add(row.Cells[i].Content.Length);
             }
         }
 
@@ -175,6 +179,18 @@ public class MarkdownRenderer : IRenderer
         foreach (var row in tb.Rows)
             RenderTableRow(row, sb, widths);
         AppendSegment(sb, tb.TrailingTrivia);
+    }
+
+    private static void RenderTableCell(TableCell tc, StringBuilder sb)
+    {
+        // TODO: We need two methods for rendering cells.
+        // If we render as part of a table we should include the trivia. Otherwise we should omit it.
+        AppendSegment(sb, tc.LeadingTrivia);
+        sb.Append($"{Str(tc.Content)}");
+        AppendSegment(sb, tc.TrailingTrivia);
+        // If we render cells by themselves we should add a newline to separate them
+        // If we render cells as part of a row we should not embed newlines
+        sb.AppendLine();
     }
 
     private static string Str(StringSegment segment) => segment.HasValue ? segment.Value! : string.Empty;
