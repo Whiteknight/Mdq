@@ -423,9 +423,9 @@ public static class MarkdownParser
     private static (bool IsCodeBlock, StringSegment LeadingTrivia, StringSegment Remainder) GetIndentedCodeBlockStart(StringSegment buffer)
     {
         int index = 0;
-        while (index < buffer.Length && (buffer[index] == ' ' || buffer[index] == '\t'))
+        while (index < buffer.Length && (buffer[index] == ' '))
             index++;
-        if (index == 0)
+        if (index < 4)
             return (false, StringSegment.Empty, buffer);
         var leadingTrivia = buffer.Subsegment(0, index);
         var remainder = buffer.Subsegment(index);
@@ -471,12 +471,24 @@ public static class MarkdownParser
     {
         (_, var marker, var language, var trailingTrivia, buffer) = GetFencedCodeBlockStart(buffer);
         int index = 0;
-        while (index < buffer.Length - 3 && !(buffer[index] == '`' && buffer[index + 1] == '`' && buffer[index + 2] == '`'))
+        bool foundCloseFence = false;
+        while (index < buffer.Length)
+        {
+            if (index + 2 < buffer.Length && buffer[index] == '`' && buffer[index + 1] == '`' && buffer[index + 2] == '`')
+            {
+                foundCloseFence = true;
+                break;
+            }
             index++;
+        }
 
         var contents = buffer.Subsegment(0, index);
+
+        if (!foundCloseFence)
+            return (new CodeBlock(language, contents, paragraphIndex) { LeadingTrivia = marker }, StringSegment.Empty);
+
         buffer = buffer.Subsegment(index);
-        var ending = buffer.Subsegment(0, 3);
+        var closeFence = buffer.Subsegment(0, 3);
         buffer = buffer.Subsegment(3);
         (trailingTrivia, var remainder) = GatherTrivia(buffer);
         // TODO: Being kind of sloppy here about keeping track of all the various bits of trivia and markers.
