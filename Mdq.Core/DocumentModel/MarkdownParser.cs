@@ -579,9 +579,21 @@ public static class MarkdownParser
         // Trim trailing whitespace and '#' characters
         // '## HEADING ##' is the same as '## HEADING', so we strip off the trailing hashes.
         // I do not confirm that the leading and trailing hashes match.
+        // HOWEVER note that '## Heading#' does not strip the trailing hash. it must be whitespace-hash-whitespace to strip
         int rIndex = line.Length - 1;
-        while (rIndex >= 0 && (char.IsWhiteSpace(line[rIndex]) || line[rIndex] == '#'))
+        while (rIndex >= 0 && char.IsWhiteSpace(line[rIndex]))
             rIndex--;
+        // Only strip trailing '#' if they are preceded by whitespace (or the text is only '#').
+        // CommonMark: '## foo ##' strips, but '## foo#' does not.
+        int hashEnd = rIndex;
+        while (hashEnd >= 0 && line[hashEnd] == '#')
+            hashEnd--;
+        if (hashEnd < 0 || char.IsWhiteSpace(line[hashEnd]))
+        {
+            rIndex = hashEnd;
+            while (rIndex >= 0 && char.IsWhiteSpace(line[rIndex]))
+                rIndex--;
+        }
         line = line.Subsegment(0, rIndex + 1);
         // TODO: Should we include trailing hashes in the trailing trivia?
         (var trailingTrivia, remainder) = GatherTrivia(remainder);
