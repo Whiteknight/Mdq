@@ -317,6 +317,36 @@ public class CodeBlockParserTests
     }
 
     // -------------------------------------------------------------------------
+    // Indented code block: second line is shorter than the indent length in total
+    // This is the case that actually triggers the ArgumentOutOfRangeException:
+    // line.Length < firstLineIndent.Length means Subsegment(0, firstLineIndent.Length) throws.
+    // -------------------------------------------------------------------------
+
+    [Test]
+    public void Parse_IndentedCodeBlock_SubsequentLineShorterThanIndentLength_DoesNotThrow()
+    {
+        // First line has 4 spaces of indent. Second line is only 3 characters total ("ab\n"),
+        // so line.Length (2) < firstLineIndent.Length (4). This triggers an
+        // ArgumentOutOfRangeException in line.Subsegment(0, 4).
+        const string markdown = "    code\nab\n";
+
+        var act = () => ParseOk(markdown);
+
+        act.Should().NotThrow("a subsequent line shorter than the first-line indent must not cause an ArgumentOutOfRangeException");
+    }
+
+    [Test]
+    public void Parse_IndentedCodeBlock_SubsequentLineShorterThanIndentLength_FirstLineBecomesCodeBlock()
+    {
+        const string markdown = "    code\nab\n";
+
+        var model = ParseOk(markdown);
+
+        model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.CodeBlock>(
+            "the first indented line should still produce a CodeBlock even when the second line is too short");
+    }
+
+    // -------------------------------------------------------------------------
     // Indented code block: single leading space is treated as an indented code block
     // This documents the current behaviour — no minimum indent of 4 is enforced.
     // -------------------------------------------------------------------------
@@ -346,6 +376,76 @@ public class CodeBlockParserTests
 
         model.TopLevelSection.Paragraphs.Should().HaveCount(2);
         model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.CodeBlock>();
+        model.TopLevelSection.Paragraphs[1].Should().BeOfType<DM.CodeBlock>();
+    }
+
+    // -------------------------------------------------------------------------
+    // Fenced code block: four backticks in content
+    // The closing-fence scanner matches the first ``` it finds. Four consecutive
+    // backticks contain a valid ``` at index 0 (matching positions 0,1,2),
+    // which would be found before the actual closing fence on its own line.
+    // This documents whether the parser handles this case correctly.
+    // -------------------------------------------------------------------------
+
+    [Test]
+    public void Parse_FencedCodeBlockWithFourBackticksOnLine_ClosingFenceIsNotTriggeredMidLine()
+    {
+        // The content line ```` contains a run of 4 backticks.
+        // The scanner should not treat the first ``` in that run as the closing fence,
+        // because a closing fence must be on its own line.
+        // NOTE: The current parser scans byte-by-byte without a line boundary check,
+        // so this test documents whether that causes incorrect early termination.
+        const string markdown = "```\n````\nmore\n```\n";
+
+        var model = ParseOk(markdown);
+        var block = model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.CodeBlock>().Subject;
+
+        block.Content.Value.Should().Contain("more",
+            "the four-backtick line should not be mistaken for the closing fence, so 'more' should appear in content");
+    }
+
+    // -------------------------------------------------------------------------
+    // Fenced code block: CRLF line endings work identically to LF
+    // -------------------------------------------------------------------------
+
+    [Test]
+    public void Parse_FencedCodeBlock_CrLfLineEndings_ProducesCorrectContent()
+    {
+        const string markdown = "```\r\nline one\r\nline two\r\n```\r\n";
+
+        var model = ParseOk(markdown);
+        var block = model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.CodeBlock>().Subject;
+
+        block.Content.Value.Should().Contain("line one");
+        block.Content.Value.Should().Contain("line two");
+    }
+
+    [Test]
+    public void Parse_FencedCodeBlock_CrLfLineEndings_LanguageTagIsCorrect()
+    {
+        const string markdown = "```csharp\r\nvar x = 1;\r\n```\r\n";
+
+        var model = ParseOk(markdown);
+        var block = model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.CodeBlock>().Subject;
+
+        block.Language.Value.Should().Be("csharp");
+    }
+
+    // -------------------------------------------------------------------------
+    // Fenced code block immediately after a block quote (no blank line)
+    // The block quote should terminate when it sees the ``` line.
+    // -------------------------------------------------------------------------
+
+    [Test]
+    public void Parse_BlockQuoteImmediatelyFollowedByFencedCodeBlock_TwoParagraphsProduced()
+    {
+        const string markdown = "> Quoted.\n```\ncode\n```\n";
+
+        var model = ParseOk(markdown);
+
+        model.TopLevelSection.Paragraphs.Should().HaveCount(2,
+            "the ``` fence should terminate the block quote and start a new CodeBlock paragraph");
+        model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.BlockQuote>();
         model.TopLevelSection.Paragraphs[1].Should().BeOfType<DM.CodeBlock>();
     }
 

@@ -322,6 +322,57 @@ public class HeadingParserTests
     }
 
     // -------------------------------------------------------------------------
+    // Closing # sequence: CommonMark only strips trailing hashes that are
+    // preceded by a space. A # embedded in the text without a leading space
+    // is part of the heading text, not a closing sequence.
+    // -------------------------------------------------------------------------
+
+    [Test]
+    public void Parse_HeadingWithTrailingHashNotPrecededBySpace_HashIsPartOfText()
+    {
+        // CommonMark spec: "## foo#" — the # is not a closing sequence because
+        // it is not preceded by a space. The heading text should be "foo#".
+        const string markdown = "## foo#";
+
+        var model = ParseOk(markdown);
+
+        var section = model.TopLevelSection.Children[0];
+        section.Heading.Text.Value.Should().Be("foo#",
+            "a trailing # not preceded by whitespace is part of the heading text, not a closing sequence");
+    }
+
+    [Test]
+    public void Parse_HeadingWithTrailingHashPrecededBySpace_HashIsStripped()
+    {
+        // "## foo ##" — the ## IS a closing sequence because it is preceded by a space.
+        const string markdown = "## foo ##";
+
+        var model = ParseOk(markdown);
+
+        var section = model.TopLevelSection.Children[0];
+        section.Heading.Text.Value.Should().Be("foo",
+            "a trailing # sequence preceded by whitespace should be stripped");
+    }
+
+    // -------------------------------------------------------------------------
+    // Heading text with leading/trailing spaces inside the text (not part of trivia)
+    // -------------------------------------------------------------------------
+
+    [Test]
+    public void Parse_HeadingWithLeadingAndTrailingSpacesInText_SpacesAreTrimmed()
+    {
+        // CommonMark strips leading and trailing spaces from the heading text
+        // (but not interior spaces).
+        const string markdown = "#   spaces around   ";
+
+        var model = ParseOk(markdown);
+
+        var section = model.TopLevelSection.Children[0];
+        section.Heading.Text.Value.Should().Be("spaces around",
+            "leading and trailing spaces in the heading text should be stripped");
+    }
+
+    // -------------------------------------------------------------------------
     // Helper
     // -------------------------------------------------------------------------
 

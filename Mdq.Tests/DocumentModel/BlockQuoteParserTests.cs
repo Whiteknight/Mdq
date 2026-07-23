@@ -249,6 +249,74 @@ public class BlockQuoteParserTests
     }
 
     // -------------------------------------------------------------------------
+    // CRLF line endings: block quote parsing must handle \r\n the same as \n
+    // -------------------------------------------------------------------------
+
+    [Test]
+    public void Parse_BlockQuote_CrLfLineEndings_ProducesSingleBlockQuoteParagraph()
+    {
+        const string markdown = "> Line one\r\n> Line two\r\n";
+
+        var model = ParseOk(markdown);
+
+        model.TopLevelSection.Paragraphs.Should().HaveCount(1);
+        model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.BlockQuote>();
+    }
+
+    [Test]
+    public void Parse_BlockQuote_CrLfLineEndings_ContentContainsBothLines()
+    {
+        const string markdown = "> Line one\r\n> Line two\r\n";
+
+        var model = ParseOk(markdown);
+        var bq = (DM.BlockQuote)model.TopLevelSection.Paragraphs[0];
+
+        bq.Content.Value.Should().Contain("Line one");
+        bq.Content.Value.Should().Contain("Line two");
+    }
+
+    // -------------------------------------------------------------------------
+    // Block quote followed immediately by a fenced code block (no blank line)
+    // The ``` line does not start with >, so the block quote must terminate.
+    // -------------------------------------------------------------------------
+
+    [Test]
+    public void Parse_BlockQuoteFollowedImmediatelyByFencedCodeBlock_BlockQuoteTerminates()
+    {
+        const string markdown = "> Quoted.\n```\ncode\n```\n";
+
+        var model = ParseOk(markdown);
+
+        model.TopLevelSection.Paragraphs.Should().HaveCount(2,
+            "the ``` line does not start with > so it should terminate the block quote");
+        model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.BlockQuote>();
+        model.TopLevelSection.Paragraphs[1].Should().BeOfType<DM.CodeBlock>();
+    }
+
+    // -------------------------------------------------------------------------
+    // Round-trip limitation: BlockQuote.Content is a collapsed string with no
+    // per-line marker or line-ending data. Re-adding the > prefix per line
+    // is the best reconstruction available.
+    // -------------------------------------------------------------------------
+
+    [Test]
+    public void Parse_SingleLineBlockQuote_ContentDoesNotContainMarkerOrLineEnding()
+    {
+        // The parser strips the leading "> " from each line and concatenates.
+        // This means the Content value does not include the marker or the newline,
+        // so a direct round-trip to the original source is not possible from Content alone.
+        const string markdown = "> Hello\n";
+
+        var model = ParseOk(markdown);
+        var bq = (DM.BlockQuote)model.TopLevelSection.Paragraphs[0];
+
+        bq.Content.Value.Should().NotContain(">",
+            "the > marker should be stripped from the content");
+        bq.Content.Value.Should().NotContain("\n",
+            "the line ending should not appear in the stripped content of a single-line block quote");
+    }
+
+    // -------------------------------------------------------------------------
     // Helper
     // -------------------------------------------------------------------------
 

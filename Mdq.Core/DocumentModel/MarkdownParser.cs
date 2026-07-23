@@ -91,13 +91,22 @@ public static class MarkdownParser
         if (!includeLineEnding)
             return (line, remainder, StringSegment.Empty);
 
-        if (index < buffer.Length && buffer[index] == '\n')
-            return (line, remainder.Subsegment(1), remainder.Subsegment(0, 1));
-        if (index + 1 < buffer.Length && buffer[index] == '\r' && buffer[index + 1] == '\n')
-            return (line, remainder.Subsegment(2), remainder.Subsegment(0, 2));
-        if (index < buffer.Length && buffer[index] == '\r')
-            return (line, remainder.Subsegment(1), remainder.Subsegment(0, 1));
-        return (line, remainder, StringSegment.Empty);
+        (_, remainder, var newLine) = ReadNewLine(remainder);
+        return (line, remainder, newLine);
+    }
+
+    private static (bool HasNewLine, StringSegment Remainder, StringSegment NewLine) ReadNewLine(StringSegment buffer)
+    {
+        if (IsAtEnd(buffer))
+            return (false, StringSegment.Empty, buffer);
+
+        if (buffer.Length >= 1 && buffer[0] == '\n')
+            return (true, buffer.Subsegment(1), buffer.Subsegment(0, 1));
+        if (buffer.Length >= 2 && buffer[0] == '\r' && buffer[1] == '\n')
+            return (true, buffer.Subsegment(2), buffer.Subsegment(0, 2));
+        if (buffer.Length >= 1 && buffer[0] == '\r')
+            return (true, buffer.Subsegment(1), buffer.Subsegment(0, 1));
+        return (false, StringSegment.Empty, buffer);
     }
 
     private static bool IsEntirelyWhitespace(StringSegment buffer)
@@ -437,25 +446,32 @@ public static class MarkdownParser
         (_, var firstLineIndent, _) = GetIndentedCodeBlockStart(buffer);
 
         var sb = new StringBuilder();
-        while (!IsAtEnd(buffer))
+        StringSegment current = buffer;
+        while (!IsAtEnd(current))
         {
-            (var line, buffer, var lineEnding) = ReadLine(buffer, true);
-            if (line.Length == 0)
-                break; // Stop parsing paragraph when we hit a blank line.
+            (var line, var nextCurrent, var lineEnding) = ReadLine(current, true);
 
+            // Stop parsing at blank or short line
+            if (line.Length == 0 || line.Length < firstLineIndent.Length)
+                break;
+
+            // Stop parsing if the indent is wrong
             var lineIndent = line.Subsegment(0, firstLineIndent.Length);
             if (!lineIndent.Equals(firstLineIndent, StringComparison.Ordinal))
-                break; // Stop parsing paragraph when we hit a line that doesn't have the same leading trivia.
+                break;
 
             sb.Append(line.Subsegment(firstLineIndent.Length).AsSpan());
             sb.Append(lineEnding.AsSpan());
+            current = nextCurrent;
         }
+
+        buffer = current;
         return (new CodeBlock(StringSegment.Empty, sb.ToString(), paragraphIndex) { LeadingTrivia = firstLineIndent }, buffer);
     }
 
     private static (bool IsCodeBlock, StringSegment Marker, StringSegment Language, StringSegment TrailingTrivia, StringSegment Remainder) GetFencedCodeBlockStart(StringSegment buffer)
     {
-        if (!buffer.StartsWith("```", StringComparison.OrdinalIgnoreCase))
+        if (!buffer.StartsWith("```", StringComparison.Ordinal))
             return (false, StringSegment.Empty, StringSegment.Empty, StringSegment.Empty, buffer);
 
         int index = 3;
@@ -472,24 +488,27 @@ public static class MarkdownParser
         (_, var marker, var language, var trailingTrivia, buffer) = GetFencedCodeBlockStart(buffer);
         int index = 0;
         bool foundCloseFence = false;
-        while (index < buffer.Length)
+        StringSegment closeFence;
+        StringSegment current = buffer;
+        while (!IsAtEnd(current))
         {
-            if (index + 2 < buffer.Length && buffer[index] == '`' && buffer[index + 1] == '`' && buffer[index + 2] == '`')
+            (var line, current, var lineEnding) = ReadLine(current, true);
+            if (line.Equals("```", StringComparison.Ordinal))
             {
                 foundCloseFence = true;
+                closeFence = line.Subsegment(0, 3);
                 break;
             }
-            index++;
+
+            index += line.Length + lineEnding.Length;
         }
 
         var contents = buffer.Subsegment(0, index);
+        buffer = current;
 
         if (!foundCloseFence)
             return (new CodeBlock(language, contents, paragraphIndex) { LeadingTrivia = marker }, StringSegment.Empty);
 
-        buffer = buffer.Subsegment(index);
-        var closeFence = buffer.Subsegment(0, 3);
-        buffer = buffer.Subsegment(3);
         (trailingTrivia, var remainder) = GatherTrivia(buffer);
         // TODO: Being kind of sloppy here about keeping track of all the various bits of trivia and markers.
         return (new CodeBlock(language, contents, paragraphIndex) { LeadingTrivia = marker, TrailingTrivia = trailingTrivia }, remainder);
