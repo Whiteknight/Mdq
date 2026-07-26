@@ -44,9 +44,11 @@ public static class EditValidator
             _ => null
         };
 
+    // TODO: Should be able to Add to a Section or a Header
     private static bool IsAddSupported(MatchableItem resolved)
         => resolved is TextBlock or ListBlock or CodeBlock or BlockQuote;
 
+    // TODO: Should be able to Set a Heading or other block types (code, blockquote, etc)
     private static bool IsSetSupported(MatchableItem resolved)
         => resolved is TextBlock or ListItem or Section;
 

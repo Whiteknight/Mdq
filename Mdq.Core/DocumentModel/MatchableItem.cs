@@ -16,6 +16,12 @@ public abstract record MatchableItem
 
 public record MarkdownDocument(Section TopLevelSection) : MatchableItem
 {
+    public static MarkdownDocument Empty(StringSegment buffer)
+        => new MarkdownDocument(new Section(Heading.Empty, [], []))
+        {
+            LeadingTrivia = buffer
+        };
+
     public override bool IsMatch(string property, string op, string value)
     {
         return (property, op, value) switch
@@ -28,7 +34,7 @@ public record MarkdownDocument(Section TopLevelSection) : MatchableItem
 
 public record Heading(StringSegment Text, int Level) : MatchableItem
 {
-    public static Heading Empty => new(default, 0);
+    public static Heading Empty => new Heading(StringSegment.Empty, 0);
 
     public bool IsMatch(string sectionHeading)
     {

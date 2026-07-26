@@ -12,6 +12,7 @@ namespace Mdq.Core.Rendering;
 /// </summary>
 public sealed class EditingMarkdownRenderer
 {
+    // TODO: Need to update this class to correctly render with stored trivia
     private readonly IReadOnlyList<MatchableItem> _resolvedTargets;
     private readonly EditOperation _operation;
     private int _listIndent;
@@ -97,6 +98,9 @@ public sealed class EditingMarkdownRenderer
 
     private void RenderSection(Section section, StringBuilder sb)
     {
+        // TODO: If the section is the target ("##name") SET should set all text in the section and add should append a new paragraph
+        // TODO: if the heading is the target ("##name.heading") SET should change the text and ADD should append to it
+        // Right now we are using a Section selector to Set the heading for that section, which is wrong.
         if (section.Heading.Level > 0)
         {
             var headingText = IsTarget(section)
