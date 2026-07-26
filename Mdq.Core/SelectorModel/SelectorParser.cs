@@ -95,6 +95,8 @@ public static class SelectorParser
                     .Add("flatten")
                     .Add("header")
                 ),
+                // .ListCharToString() can return an empty list of 0 chars, so if we just have a '.'
+                // it will return an empty name and the error message below will still work.
                 Match(c => c != '#' && c != '.')
                     .ListCharToString()
             ),
@@ -105,6 +107,7 @@ public static class SelectorParser
                 "items" => Selector.DotItems(),
                 "flatten" => Selector.DotFlatten(),
                 "header" => Selector.DotHeader(),
+                { Length: 0 } => Selector.ErrorMessage("Missing selector"),
                 _ => Selector.ErrorMessage($"Unknown selector '.{name}'")
             });
 
@@ -131,6 +134,7 @@ public static class SelectorParser
                     MatchChar(')'),
                     (d, _) => d),
                 Rule(
+                    // Error fall-back case. Best-effort to parse up as much as we can before returning an error
                     MatchChar(c => c != ')')
                         .ListCharToString()
                         .Map(v => Selector.ErrorMessage($"Expected positive numeric index and ')' but found '{v}'")),
@@ -146,8 +150,11 @@ public static class SelectorParser
                     "paragraph" when temp.Value > 0 => Selector.DotParagraphParenIndex(temp.Value),
                     "skip" when temp.Value > 0 => Selector.DotSkipTake(temp.Value, 0),
                     "take" when temp.Value > 0 => Selector.DotSkipTake(0, temp.Value),
+
+                    // .row(0) is the header row. All other indexing starts at 1
                     "row" => Selector.DotRowParenIndex(temp.Value),
                     "cell" when temp.Value > 0 => Selector.DotCellParenIndex(temp.Value),
+                    { Length: 0 } => Selector.ErrorMessage("Missing selector"),
                     _ => Selector.ErrorMessage($"Numeric value must be non-zero positive for '.{name}'")
                 },
                 _ => Selector.ErrorMessage($"Unknown selector sequence {n}")
@@ -166,9 +173,9 @@ public static class SelectorParser
             MatchChar('['),
             Identifier(),
             // TODO: Allow other kinds of operators?
-            MatchChar('='),
+            MatchChars("="),
             MatchChar(c => c != ']')
                 .ListCharToString(),
             MatchChar(']'),
-            (_, property, op, value, _) => Selector.FilterBlock(property, op.ToString(), value));
+            (_, property, op, value, _) => Selector.FilterBlock(property, op, value));
 }
