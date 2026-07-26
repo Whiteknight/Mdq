@@ -10,7 +10,10 @@ public class TocRenderer : IRenderer
     public string Render(List<MatchableItem> items)
     {
         var headings = items.OfType<Heading>().ToList();
-        headings.Insert(0, new Heading("", 0));
+        if (headings.Count == 0)
+            return string.Empty;
+        if (headings[0].Level != 0)
+            headings.Insert(0, new Heading("", 0));
         var root = BuildNode(headings, 0, headings[0].Level).Node;
 
         var sb = new StringBuilder();
