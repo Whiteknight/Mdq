@@ -64,8 +64,8 @@ public static class SelectorParser
         var ows = OptionalWhitespace();
         var poundHeading = GetPoundHeadingParser();
 
-        var dotSelector = GetDotSelectorWithNoArguments();
-        var dotSelectorWithSingleNumber = GetDotSelectorWithSingleNumberArgument();
+        var dotSelector = GetDotSelectorWithNoArgumentsParser();
+        var dotSelectorWithSingleNumber = GetDotSelectorWithSingleNumberArgumentParser();
         var filterBlock = GetFilterParser();
 
         var selector = First(
@@ -74,13 +74,17 @@ public static class SelectorParser
             dotSelectorWithSingleNumber,
             dotSelector);
 
+        var selectorChain = selector
+            .List(ows, 1)
+            .Map(l => new SelectorChain(l));
+
         return Rule(
-            selector.List(ows, 1).Map(l => new SelectorChain(l)),
+            selectorChain,
             End(),
             (sc, _) => sc);
     }
 
-    private static IParser<char, Selector> GetDotSelectorWithNoArguments()
+    private static IParser<char, Selector> GetDotSelectorWithNoArgumentsParser()
         => Rule(
             MatchChar('.'),
             First(
@@ -91,22 +95,20 @@ public static class SelectorParser
                     .Add("flatten")
                     .Add("header")
                 ),
-                Match(c => c != '#' && c != '.').ListCharToString()
+                Match(c => c != '#' && c != '.')
+                    .ListCharToString()
             ),
-            (_, name) =>
+            (_, name) => name switch
             {
-                return name switch
-                {
-                    "text" => Selector.DotText(),
-                    "heading" => Selector.DotHeading(),
-                    "items" => Selector.DotItems(),
-                    "flatten" => Selector.DotFlatten(),
-                    "header" => Selector.DotHeader(),
-                    _ => Selector.ErrorMessage($"Unknown selector '.{name}'")
-                };
+                "text" => Selector.DotText(),
+                "heading" => Selector.DotHeading(),
+                "items" => Selector.DotItems(),
+                "flatten" => Selector.DotFlatten(),
+                "header" => Selector.DotHeader(),
+                _ => Selector.ErrorMessage($"Unknown selector '.{name}'")
             });
 
-    private static IParser<char, Selector> GetDotSelectorWithSingleNumberArgument()
+    private static IParser<char, Selector> GetDotSelectorWithSingleNumberArgumentParser()
         => Rule(
             MatchChar('.'),
             First(
@@ -124,48 +126,49 @@ public static class SelectorParser
             // Once we have '.name(', we MUST have a non-negative integer and a ')' or else we get some kind of error
             First(
                 Rule(
-                    DigitsAsInteger(1, 5).Map(i => (Selector)new Selector.Temporary(i.ToString())),
+                    DigitsAsInteger(1, 5)
+                        .Map(i => (Selector)new Selector.TemporaryInteger(i)),
                     MatchChar(')'),
                     (d, _) => d),
                 Rule(
-                    MatchChar(c => c != ')').ListCharToString().Map(v => Selector.ErrorMessage($"Expected positive numeric index and ')' but found '{v}'")),
+                    MatchChar(c => c != ')')
+                        .ListCharToString()
+                        .Map(v => Selector.ErrorMessage($"Expected positive numeric index and ')' but found '{v}'")),
                     MatchChar(')').Optional(),
                     (x, _) => x)
             ),
-            (_, name, _, n) =>
+            (_, name, _, n) => n switch
             {
-                if (n is Selector.Error)
-                    return n;
-                if (n is Selector.Temporary temp)
+                Selector.Error error => error,
+                Selector.TemporaryInteger temp => name switch
                 {
-                    var intValue = int.Parse(temp.Value);
-                    return name switch
-                    {
-                        "item" when intValue > 0 => Selector.DotItemParenIndex(intValue),
-                        "paragraph" when intValue > 0 => Selector.DotParagraphParenIndex(intValue),
-                        "skip" when intValue > 0 => Selector.DotSkipTake(intValue, 0),
-                        "take" when intValue > 0 => Selector.DotSkipTake(0, intValue),
-                        "row" => Selector.DotRowParenIndex(intValue),
-                        "cell" when intValue > 0 => Selector.DotCellParenIndex(intValue),
-                        _ => Selector.ErrorMessage($"Numeric value must be non-zero positive for '.{name}'")
-                    };
-                }
-                return Selector.ErrorMessage("Unknown selector sequence");
+                    "item" when temp.Value > 0 => Selector.DotItemParenIndex(temp.Value),
+                    "paragraph" when temp.Value > 0 => Selector.DotParagraphParenIndex(temp.Value),
+                    "skip" when temp.Value > 0 => Selector.DotSkipTake(temp.Value, 0),
+                    "take" when temp.Value > 0 => Selector.DotSkipTake(0, temp.Value),
+                    "row" => Selector.DotRowParenIndex(temp.Value),
+                    "cell" when temp.Value > 0 => Selector.DotCellParenIndex(temp.Value),
+                    _ => Selector.ErrorMessage($"Numeric value must be non-zero positive for '.{name}'")
+                },
+                _ => Selector.ErrorMessage($"Unknown selector sequence {n}")
             });
 
     private static IParser<char, Selector> GetPoundHeadingParser()
         => Rule(
             MatchChar('#'),
             // TODO: Probably need a way to escape # and . characters
-            MatchChar(c => c != '#' && c != '.').ListCharToString().Optional(() => string.Empty),
+            MatchChar(c => c != '#' && c != '.')
+                .ListCharToString(),
             (_, name) => Selector.PoundHeading(name.Trim()));
 
     private static IParser<char, Selector> GetFilterParser()
         => Rule(
             MatchChar('['),
             Identifier(),
+            // TODO: Allow other kinds of operators?
             MatchChar('='),
-            MatchChar(c => c != ']').ListCharToString(),
+            MatchChar(c => c != ']')
+                .ListCharToString(),
             MatchChar(']'),
             (_, property, op, value, _) => Selector.FilterBlock(property, op.ToString(), value));
 }

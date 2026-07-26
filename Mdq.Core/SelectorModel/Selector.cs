@@ -95,5 +95,5 @@ public abstract record Selector
         public override string ToString() => $".cell({Index})";
     }
 
-    public sealed record Temporary(string Value) : Selector;
+    public sealed record TemporaryInteger(int Value) : Selector;
 }
