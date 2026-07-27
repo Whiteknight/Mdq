@@ -290,7 +290,7 @@ public class BlockQuoteParserTests
         model.TopLevelSection.Paragraphs.Should().HaveCount(2,
             "the ``` line does not start with > so it should terminate the block quote");
         model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.BlockQuote>();
-        model.TopLevelSection.Paragraphs[1].Should().BeOfType<DM.CodeBlock>();
+        model.TopLevelSection.Paragraphs[1].Should().BeOfType<DM.FencedCodeBlock>();
     }
 
     // -------------------------------------------------------------------------

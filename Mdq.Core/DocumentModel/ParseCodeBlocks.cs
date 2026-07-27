@@ -39,7 +39,7 @@ public static partial class MarkdownParser
             current = nextCurrent;
         }
 
-        var cb = new CodeBlock(StringSegment.Empty, lines, paragraphIndex, false, firstLineIndent)
+        var cb = new IndentedCodeBlock(lines, paragraphIndex, firstLineIndent)
         {
             LeadingTrivia = firstLineIndent
         };
@@ -83,7 +83,7 @@ public static partial class MarkdownParser
         if (!foundCloseFence)
         {
             // TODO: Being kind of sloppy here about keeping track of all the various bits of trivia and markers.
-            var cb = new CodeBlock(language, lines, paragraphIndex, true, StringSegment.Empty)
+            var cb = new FencedCodeBlock(language, lines, paragraphIndex)
             {
                 LeadingTrivia = marker
             };
@@ -92,7 +92,7 @@ public static partial class MarkdownParser
 
         (trailingTrivia, var remainder) = GatherTrivia(buffer);
         // TODO: Being kind of sloppy here about keeping track of all the various bits of trivia and markers.
-        var cbi = new CodeBlock(language, lines, paragraphIndex, true, StringSegment.Empty)
+        var cbi = new FencedCodeBlock(language, lines, paragraphIndex)
         {
             LeadingTrivia = marker,
             TrailingTrivia = trailingTrivia

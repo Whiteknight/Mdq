@@ -1,5 +1,4 @@
 using AwesomeAssertions;
-using Markdig;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
 using Mdq.Core.DocumentModel;
@@ -54,7 +53,7 @@ public sealed class ReadmeExamplesTests
             if (selector is null)
                 continue;
 
-            if (i + 1 < blocks.Count && blocks[i + 1] is FencedCodeBlock fcb && fcb.Info == "markdown")
+            if (i + 1 < blocks.Count && blocks[i + 1] is Markdig.Syntax.FencedCodeBlock fcb && fcb.Info == "markdown")
                 yield return new TestCaseData(selector, fcb.Lines.ToString().Trim()).SetName(selector);
         }
     }

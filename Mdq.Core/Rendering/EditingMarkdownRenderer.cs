@@ -86,8 +86,12 @@ public sealed class EditingMarkdownRenderer
                 RenderListItem(li, sb);
                 break;
 
-            case CodeBlock cb:
-                RenderCodeBlock(cb, sb);
+            case FencedCodeBlock fcb:
+                RenderCodeBlock(fcb, sb);
+                break;
+
+            case IndentedCodeBlock icb:
+                RenderCodeBlock(icb, sb);
                 break;
         }
     }
@@ -206,26 +210,28 @@ public sealed class EditingMarkdownRenderer
     // CodeBlock
     // -------------------------------------------------------------------------
 
-    private void RenderCodeBlock(CodeBlock cb, StringBuilder sb)
+    private void RenderCodeBlock(FencedCodeBlock cb, StringBuilder sb)
     {
         var content = IsTarget(cb) && _operation is Add add
             ? [.. cb.Lines, add.Text]
             : cb.Lines;
 
-        if (cb.Fenced)
+        sb.AppendLine($"```{cb.Language}");
+        foreach (var line in content)
+            sb.AppendLine(Str(line));
+        sb.AppendLine("```");
+    }
+
+    private void RenderCodeBlock(IndentedCodeBlock cb, StringBuilder sb)
+    {
+        var content = IsTarget(cb) && _operation is Add add
+            ? [.. cb.Lines, add.Text]
+            : cb.Lines;
+
+        foreach (var line in content)
         {
-            sb.AppendLine($"```{cb.Language}");
-            foreach (var line in content)
-                sb.AppendLine(Str(line));
-            sb.AppendLine("```");
-        }
-        else
-        {
-            foreach (var line in content)
-            {
-                sb.Append(Str(cb.Indent));
-                sb.AppendLine(Str(line));
-            }
+            sb.Append(Str(cb.Indent));
+            sb.AppendLine(Str(line));
         }
     }
 

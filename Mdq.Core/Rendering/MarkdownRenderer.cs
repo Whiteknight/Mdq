@@ -54,8 +54,12 @@ public class MarkdownRenderer : IRenderer
                 RenderListItem(li, sb);
                 break;
 
-            case CodeBlock cb:
-                RenderCodeBlock(cb, sb);
+            case FencedCodeBlock fcb:
+                RenderCodeBlock(fcb, sb);
+                break;
+
+            case IndentedCodeBlock icb:
+                RenderCodeBlock(icb, sb);
                 break;
 
             case TableRow tr:
@@ -132,31 +136,29 @@ public class MarkdownRenderer : IRenderer
             RenderItem(item.SubList, sb);
     }
 
-    private static void RenderCodeBlock(CodeBlock cb, StringBuilder sb)
+    private static void RenderCodeBlock(FencedCodeBlock cb, StringBuilder sb)
     {
-        if (cb.Fenced)
+        AppendSegment(sb, cb.LeadingTrivia);
+        //sb.Append("```");
+        AppendSegment(sb, cb.Language);
+        sb.AppendLine();
+        foreach (var line in cb.Lines)
         {
-            AppendSegment(sb, cb.LeadingTrivia);
-            //sb.Append("```");
-            AppendSegment(sb, cb.Language);
+            AppendSegment(sb, line);
             sb.AppendLine();
-            foreach (var line in cb.Lines)
-            {
-                AppendSegment(sb, line);
-                sb.AppendLine();
-            }
-            // TODO: Closing fence should be part of TrailingTrivia
-            sb.Append("```");
-            AppendSegment(sb, cb.TrailingTrivia);
         }
-        else
+        // TODO: Closing fence should be part of TrailingTrivia
+        sb.Append("```");
+        AppendSegment(sb, cb.TrailingTrivia);
+    }
+
+    private static void RenderCodeBlock(IndentedCodeBlock cb, StringBuilder sb)
+    {
+        foreach (var line in cb.Lines)
         {
-            foreach (var line in cb.Lines)
-            {
-                AppendSegment(sb, cb.Indent);
-                AppendSegment(sb, line);
-                sb.AppendLine();
-            }
+            AppendSegment(sb, cb.Indent);
+            AppendSegment(sb, line);
+            sb.AppendLine();
         }
     }
 

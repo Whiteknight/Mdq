@@ -153,7 +153,7 @@ public sealed record BlockQuote(StringSegment Content, int Index) : Paragraph(In
 
 // TODO: We probably want a complete view of the entire raw Contents AND a list of individual lines
 // for various downstream rendering and matching usages.
-public sealed record CodeBlock(StringSegment Language, IReadOnlyList<StringSegment> Lines, int Index, bool Fenced, StringSegment Indent) : Paragraph(Index)
+public abstract record CodeBlock(IReadOnlyList<StringSegment> Lines, int Index) : Paragraph(Index)
 {
     public string GetContentsAsString()
     {
@@ -168,10 +168,27 @@ public sealed record CodeBlock(StringSegment Language, IReadOnlyList<StringSegme
         return (property, op, value) switch
         {
             ("type", "=", "codeblock") => true,
-            ("lang", "=", _) => string.IsNullOrEmpty(value) || value.Equals(Language, StringComparison.OrdinalIgnoreCase),
             _ => false
         };
     }
+}
+
+public sealed record FencedCodeBlock(StringSegment Language, IReadOnlyList<StringSegment> Lines, int Index)
+    : CodeBlock(Lines, Index)
+{
+    public override bool IsMatch(string property, string op, string value)
+    {
+        return (property, op, value) switch
+        {
+            ("lang", "=", _) => string.IsNullOrEmpty(value) || value.Equals(Language, StringComparison.OrdinalIgnoreCase),
+            _ => base.IsMatch(property, op, value)
+        };
+    }
+}
+
+public sealed record IndentedCodeBlock(IReadOnlyList<StringSegment> Lines, int Index, StringSegment Indent)
+    : CodeBlock(Lines, Index)
+{
 }
 
 public sealed record TableRow(IReadOnlyList<TableCell> Cells, int Index) : MatchableItem

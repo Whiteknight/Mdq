@@ -20,7 +20,7 @@ public class EditValidatorTests
         new(ListKind.Bulleted, [new ListItem("item", ListKind.Bulleted, 1, null)], 1);
 
     private static CodeBlock ACodeBlock() =>
-        new(null, ["code"], 1, true, StringSegment.Empty);
+        new FencedCodeBlock(StringSegment.Empty, ["code"], 1);
 
     private static BlockQuote ABlockQuote() =>
         new("quote", 1);
@@ -157,7 +157,7 @@ public class EditValidatorTests
     {
         var result = Validate([ACodeBlock()], new Set("text"));
         var error = result.GetErrorOrDefault().Should().BeOfType<UnsupportedNodeType>().Subject;
-        error.NodeType.Should().Be(nameof(CodeBlock));
+        error.NodeType.Should().Be(nameof(FencedCodeBlock));
         error.Operation.Should().Be("set");
     }
 

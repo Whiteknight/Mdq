@@ -243,7 +243,7 @@ public class TextBlockParserTests
         paras.Should().HaveCount(2,
             "a fenced code block should terminate the preceding text paragraph");
         paras[0].Should().BeOfType<DM.TextBlock>();
-        paras[1].Should().BeOfType<DM.CodeBlock>();
+        paras[1].Should().BeOfType<DM.FencedCodeBlock>();
     }
 
     // -------------------------------------------------------------------------

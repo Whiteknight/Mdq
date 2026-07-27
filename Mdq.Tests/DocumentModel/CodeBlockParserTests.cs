@@ -26,7 +26,7 @@ public class CodeBlockParserTests
         var model = ParseOk(markdown);
 
         model.TopLevelSection.Paragraphs.Should().HaveCount(1);
-        model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.CodeBlock>();
+        model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.FencedCodeBlock>();
     }
 
     [Test]
@@ -63,7 +63,7 @@ public class CodeBlockParserTests
         const string markdown = "```csharp\nvar x = 1;\n```\n";
 
         var model = ParseOk(markdown);
-        var block = (DM.CodeBlock)model.TopLevelSection.Paragraphs[0];
+        var block = (DM.FencedCodeBlock)model.TopLevelSection.Paragraphs[0];
 
         block.Language.Value.Should().Be("csharp");
     }
@@ -74,7 +74,7 @@ public class CodeBlockParserTests
         const string markdown = "```\ncode\n```\n";
 
         var model = ParseOk(markdown);
-        var block = (DM.CodeBlock)model.TopLevelSection.Paragraphs[0];
+        var block = (DM.FencedCodeBlock)model.TopLevelSection.Paragraphs[0];
 
         block.Language.Value.Should().BeNullOrEmpty();
     }
@@ -133,7 +133,7 @@ public class CodeBlockParserTests
         var model = ParseOk(markdown);
 
         model.TopLevelSection.Paragraphs.Should().HaveCount(1);
-        model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.CodeBlock>();
+        model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.FencedCodeBlock>();
         model.TopLevelSection.Children.Should().HaveCount(1);
     }
 
@@ -161,7 +161,7 @@ public class CodeBlockParserTests
         var model = ParseOk(markdown);
 
         model.TopLevelSection.Paragraphs.Should().HaveCount(1);
-        model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.CodeBlock>(
+        model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.FencedCodeBlock>(
             "a fenced code block that is never closed should still be parsed as a CodeBlock");
     }
 
@@ -177,7 +177,7 @@ public class CodeBlockParserTests
         const string markdown = "```\ncode\n```";
 
         var model = ParseOk(markdown);
-        var block = model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.CodeBlock>().Subject;
+        var block = model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.FencedCodeBlock>().Subject;
 
         block.Lines[0].Value.Should().Contain("code");
     }
@@ -220,7 +220,7 @@ public class CodeBlockParserTests
         var model = ParseOk(markdown);
 
         model.TopLevelSection.Paragraphs.Should().HaveCount(1);
-        model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.CodeBlock>();
+        model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.IndentedCodeBlock>();
     }
 
     [Test]
@@ -246,17 +246,6 @@ public class CodeBlockParserTests
 
         block.Lines[0].Value.Should().Contain("line one");
         block.Lines[1].Value.Should().Contain("line two");
-    }
-
-    [Test]
-    public void Parse_IndentedCodeBlock_LanguageIsEmpty()
-    {
-        const string markdown = "    code\n";
-
-        var model = ParseOk(markdown);
-        var block = (DM.CodeBlock)model.TopLevelSection.Paragraphs[0];
-
-        block.Language.Value.Should().BeNullOrEmpty();
     }
 
     [Test]
@@ -313,7 +302,7 @@ public class CodeBlockParserTests
         var model = ParseOk(markdown);
 
         // Even if only the first line is captured, it should be a CodeBlock
-        model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.CodeBlock>();
+        model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.IndentedCodeBlock>();
     }
 
     // -------------------------------------------------------------------------
@@ -342,7 +331,7 @@ public class CodeBlockParserTests
 
         var model = ParseOk(markdown);
 
-        model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.CodeBlock>(
+        model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.IndentedCodeBlock>(
             "the first indented line should still produce a CodeBlock even when the second line is too short");
     }
 
@@ -375,8 +364,8 @@ public class CodeBlockParserTests
         var model = ParseOk(markdown);
 
         model.TopLevelSection.Paragraphs.Should().HaveCount(2);
-        model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.CodeBlock>();
-        model.TopLevelSection.Paragraphs[1].Should().BeOfType<DM.CodeBlock>();
+        model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.FencedCodeBlock>();
+        model.TopLevelSection.Paragraphs[1].Should().BeOfType<DM.FencedCodeBlock>();
     }
 
     // -------------------------------------------------------------------------
@@ -398,7 +387,7 @@ public class CodeBlockParserTests
         const string markdown = "```\n````\nmore\n```\n";
 
         var model = ParseOk(markdown);
-        var block = model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.CodeBlock>().Subject;
+        var block = model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.FencedCodeBlock>().Subject;
 
         block.Lines[1].Value.Should().Contain("more",
             "the four-backtick line should not be mistaken for the closing fence, so 'more' should appear in content");
@@ -414,7 +403,7 @@ public class CodeBlockParserTests
         const string markdown = "```\r\nline one\r\nline two\r\n```\r\n";
 
         var model = ParseOk(markdown);
-        var block = model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.CodeBlock>().Subject;
+        var block = model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.FencedCodeBlock>().Subject;
 
         block.Lines[0].Value.Should().Contain("line one");
         block.Lines[1].Value.Should().Contain("line two");
@@ -426,7 +415,7 @@ public class CodeBlockParserTests
         const string markdown = "```csharp\r\nvar x = 1;\r\n```\r\n";
 
         var model = ParseOk(markdown);
-        var block = model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.CodeBlock>().Subject;
+        var block = model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.FencedCodeBlock>().Subject;
 
         block.Language.Value.Should().Be("csharp");
     }
@@ -446,7 +435,7 @@ public class CodeBlockParserTests
         model.TopLevelSection.Paragraphs.Should().HaveCount(2,
             "the ``` fence should terminate the block quote and start a new CodeBlock paragraph");
         model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.BlockQuote>();
-        model.TopLevelSection.Paragraphs[1].Should().BeOfType<DM.CodeBlock>();
+        model.TopLevelSection.Paragraphs[1].Should().BeOfType<DM.FencedCodeBlock>();
     }
 
     // -------------------------------------------------------------------------
