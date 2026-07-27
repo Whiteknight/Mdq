@@ -176,6 +176,8 @@ public abstract record CodeBlock(IReadOnlyList<StringSegment> Lines, int Index) 
 public sealed record FencedCodeBlock(StringSegment Language, IReadOnlyList<StringSegment> Lines, int Index)
     : CodeBlock(Lines, Index)
 {
+    public StringSegment ClosingFence { get; set; }
+
     public override bool IsMatch(string property, string op, string value)
     {
         return (property, op, value) switch

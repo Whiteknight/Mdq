@@ -62,10 +62,10 @@ public static partial class MarkdownParser
 
     private static (Paragraph Paragraph, StringSegment Remainder) ParseFencedCodeBlock(StringSegment buffer, int paragraphIndex)
     {
-        (_, var marker, var language, var trailingTrivia, buffer) = GetFencedCodeBlockStart(buffer);
+        (_, var marker, var language, _, buffer) = GetFencedCodeBlockStart(buffer);
         var lines = new List<StringSegment>();
         bool foundCloseFence = false;
-        StringSegment closeFence;
+        StringSegment closeFence = StringSegment.Empty;
         while (!IsAtEnd(buffer))
         {
             (var line, buffer, var lineEnding) = ReadLine(buffer, true);
@@ -73,7 +73,6 @@ public static partial class MarkdownParser
             {
                 foundCloseFence = true;
                 closeFence = line.Subsegment(0, 3);
-                // TODO: Capture the close fence as part of the trailing trivia, for reconstruction
                 break;
             }
 
@@ -85,16 +84,18 @@ public static partial class MarkdownParser
             // TODO: Being kind of sloppy here about keeping track of all the various bits of trivia and markers.
             var cb = new FencedCodeBlock(language, lines, paragraphIndex)
             {
-                LeadingTrivia = marker
+                LeadingTrivia = marker,
+                ClosingFence = closeFence
             };
             return (cb, StringSegment.Empty);
         }
 
-        (trailingTrivia, var remainder) = GatherTrivia(buffer);
+        (var trailingTrivia, var remainder) = GatherTrivia(buffer);
         // TODO: Being kind of sloppy here about keeping track of all the various bits of trivia and markers.
         var cbi = new FencedCodeBlock(language, lines, paragraphIndex)
         {
             LeadingTrivia = marker,
+            ClosingFence = closeFence,
             TrailingTrivia = trailingTrivia
         };
         return (cbi, remainder);

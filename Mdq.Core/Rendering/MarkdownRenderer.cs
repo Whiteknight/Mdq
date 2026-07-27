@@ -139,7 +139,6 @@ public class MarkdownRenderer : IRenderer
     private static void RenderCodeBlock(FencedCodeBlock cb, StringBuilder sb)
     {
         AppendSegment(sb, cb.LeadingTrivia);
-        //sb.Append("```");
         AppendSegment(sb, cb.Language);
         sb.AppendLine();
         foreach (var line in cb.Lines)
@@ -147,8 +146,7 @@ public class MarkdownRenderer : IRenderer
             AppendSegment(sb, line);
             sb.AppendLine();
         }
-        // TODO: Closing fence should be part of TrailingTrivia
-        sb.Append("```");
+        AppendSegment(sb, cb.ClosingFence);
         AppendSegment(sb, cb.TrailingTrivia);
     }
 
