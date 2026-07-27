@@ -42,6 +42,10 @@ public static partial class MarkdownParser
 
         // TODO: We should keep track of each individual line with it's leading trivia here, so we can
         // faithfully round-trip reassemble it.
-        return (new BlockQuote(sb.ToString(), paragraphIndex) { TrailingTrivia = previousTrivia }, buffer.Subsegment(totalLength + previousTrivia.Length));
+        var bq = new BlockQuote(sb.ToString(), paragraphIndex)
+        {
+            TrailingTrivia = previousTrivia
+        };
+        return (bq, buffer.Subsegment(totalLength + previousTrivia.Length));
     }
 }

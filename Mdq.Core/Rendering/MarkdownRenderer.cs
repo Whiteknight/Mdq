@@ -6,11 +6,8 @@ namespace Mdq.Core.Rendering;
 
 public class MarkdownRenderer : IRenderer
 {
-    private int _listIndent;
-
     public string Render(List<MatchableItem> items)
     {
-        _listIndent = 0;
         var sb = new StringBuilder();
         RenderItems(items, sb);
         return sb.ToString();
@@ -78,17 +75,19 @@ public class MarkdownRenderer : IRenderer
     private static void RenderHeading(Heading heading, StringBuilder sb)
     {
         AppendSegment(sb, heading.LeadingTrivia);
-        sb.Append($"{Str(heading.Text)}");
+        AppendSegment(sb, heading.Text);
         AppendSegment(sb, heading.TrailingTrivia);
     }
 
     private void RenderSection(Section section, StringBuilder sb)
     {
+        AppendSegment(sb, section.LeadingTrivia);
         RenderHeading(section.Heading, sb);
         foreach (var para in section.Paragraphs)
             RenderItem(para, sb);
         foreach (var child in section.Children)
             RenderItem(child, sb);
+        AppendSegment(sb, section.TrailingTrivia);
     }
 
     private static void RenderTextBlock(TextBlock tb, StringBuilder sb)
@@ -98,46 +97,82 @@ public class MarkdownRenderer : IRenderer
         AppendSegment(sb, tb.TrailingTrivia);
     }
 
+    private static readonly char[] _lineSeparators = ['\n'];
+
     private static void RenderBlockQuote(BlockQuote bq, StringBuilder sb)
     {
-        foreach (var line in Str(bq.Content).Split('\n'))
-            sb.Append($"> {line}").AppendLine();
+        AppendSegment(sb, bq.LeadingTrivia);
+        var lines = bq.Content.Split(_lineSeparators);
+        foreach (var line in lines)
+        {
+            sb.Append("> ");
+            AppendSegment(sb, line);
+            sb.AppendLine();
+        }
+        AppendSegment(sb, bq.TrailingTrivia);
     }
 
     private void RenderListBlock(ListBlock listBlock, StringBuilder sb)
     {
+        AppendSegment(sb, listBlock.LeadingTrivia);
         for (int i = 0; i < listBlock.Items.Count; i++)
         {
             var item = listBlock.Items[i];
             RenderListItem(item, sb);
         }
-        sb.AppendLine();
+        AppendSegment(sb, listBlock.TrailingTrivia);
     }
 
     private void RenderListItem(ListItem item, StringBuilder sb)
     {
-        sb.Append($"{Str(item.LeadingTrivia)}{Str(item.Content)}{Str(item.TrailingTrivia)}");
-
+        AppendSegment(sb, item.LeadingTrivia);
+        AppendSegment(sb, item.Content);
+        AppendSegment(sb, item.TrailingTrivia);
         if (item.SubList is not null)
-        {
-            _listIndent++;
             RenderItem(item.SubList, sb);
-            _listIndent--;
-        }
     }
 
     private static void RenderCodeBlock(CodeBlock cb, StringBuilder sb)
     {
-        sb.AppendLine($"```{cb.Language}");
-        sb.Append(Str(cb.Content));
-        sb.Append("```");
+        if (cb.Fenced)
+        {
+            AppendSegment(sb, cb.LeadingTrivia);
+            //sb.Append("```");
+            AppendSegment(sb, cb.Language);
+            sb.AppendLine();
+            foreach (var line in cb.Lines)
+            {
+                AppendSegment(sb, line);
+                sb.AppendLine();
+            }
+            // TODO: Closing fence should be part of TrailingTrivia
+            sb.Append("```");
+            AppendSegment(sb, cb.TrailingTrivia);
+        }
+        else
+        {
+            foreach (var line in cb.Lines)
+            {
+                AppendSegment(sb, cb.Indent);
+                AppendSegment(sb, line);
+                sb.AppendLine();
+            }
+        }
     }
 
     private static void RenderTableRow(TableRow tr, StringBuilder sb)
     {
+        AppendSegment(sb, tr.LeadingTrivia);
         foreach (var cell in tr.Cells)
-            sb.Append($"| {Str(cell.Content)} ");
-        sb.Append("|");
+        {
+            // TODO: We should include the | and all the whitespace in the cell's trivia, so we
+            // can simplify all this.
+            sb.Append("| ");
+            AppendSegment(sb, cell.Content);
+            sb.Append(' ');
+        }
+        sb.Append('|');
+        AppendSegment(sb, tr.TrailingTrivia);
     }
 
     private static void RenderTableRow(TableRow tr, StringBuilder sb, List<int> cellWidths)
@@ -147,12 +182,13 @@ public class MarkdownRenderer : IRenderer
         {
             var cell = tr.Cells[i];
             sb.Append("| ");
-            var str = Str(cell.Content);
-            sb.Append(str);
-            sb.Append(new string(' ', cellWidths[i] - str.Length));
-            sb.Append(" ");
+            AppendSegment(sb, cell.Content);
+            var padLength = cellWidths[i] - cell.Content.Length;
+            for (int j = 0; j < padLength; j++)
+                sb.Append(' ');
+            sb.Append(' ');
         }
-        sb.Append("|");
+        sb.Append('|');
         AppendSegment(sb, tr.TrailingTrivia);
     }
 
@@ -175,7 +211,7 @@ public class MarkdownRenderer : IRenderer
         RenderTableRow(tb.Header, sb, widths);
         foreach (var width in widths)
             sb.Append($"| {new string('-', width)} ");
-        sb.Append("|").AppendLine();
+        sb.Append('|').AppendLine();
         foreach (var row in tb.Rows)
             RenderTableRow(row, sb, widths);
         AppendSegment(sb, tb.TrailingTrivia);
@@ -186,18 +222,18 @@ public class MarkdownRenderer : IRenderer
         // TODO: We need two methods for rendering cells.
         // If we render as part of a table we should include the trivia. Otherwise we should omit it.
         AppendSegment(sb, tc.LeadingTrivia);
-        sb.Append($"{Str(tc.Content)}");
+        AppendSegment(sb, tc.Content);
         AppendSegment(sb, tc.TrailingTrivia);
         // If we render cells by themselves we should add a newline to separate them
         // If we render cells as part of a row we should not embed newlines
         sb.AppendLine();
     }
 
-    private static string Str(StringSegment segment) => segment.HasValue ? segment.Value! : string.Empty;
-
     private static void AppendSegment(StringBuilder sb, StringSegment segment)
     {
-        if (segment.HasValue && segment.Length > 0)
-            sb.Append(segment.Value);
+        if (!segment.HasValue || segment.Length == 0)
+            return;
+        for (int i = 0; i < segment.Length; i++)
+            sb.Append(segment[i]);
     }
 }

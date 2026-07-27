@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Primitives;
 
@@ -113,6 +114,14 @@ public record TextBlock(StringSegment Content, int Index) : Paragraph(Index)
 
 public sealed record SyntheticTextBlock(StringSegment Content, int Index, MatchableItem Source) : TextBlock(Content, Index)
 {
+    public static SyntheticTextBlock New(IReadOnlyList<StringSegment> lines, int index, MatchableItem source)
+    {
+        var sb = new StringBuilder();
+        foreach (var line in lines)
+            sb.AppendLine(line.ToString());
+        return new SyntheticTextBlock(sb.ToString(), index, source);
+    }
+
     public override bool IsMatch(string property, string op, string value) => base.IsMatch(property, op, value);
 }
 
@@ -142,8 +151,18 @@ public sealed record BlockQuote(StringSegment Content, int Index) : Paragraph(In
     }
 }
 
-public sealed record CodeBlock(StringSegment Language, StringSegment Content, int Index) : Paragraph(Index)
+// TODO: We probably want a complete view of the entire raw Contents AND a list of individual lines
+// for various downstream rendering and matching usages.
+public sealed record CodeBlock(StringSegment Language, IReadOnlyList<StringSegment> Lines, int Index, bool Fenced, StringSegment Indent) : Paragraph(Index)
 {
+    public string GetContentsAsString()
+    {
+        var sb = new StringBuilder();
+        foreach (var line in Lines)
+            sb.AppendLine(line.ToString());
+        return sb.ToString();
+    }
+
     public override bool IsMatch(string property, string op, string value)
     {
         return (property, op, value) switch

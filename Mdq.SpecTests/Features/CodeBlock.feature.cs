@@ -137,7 +137,7 @@ namespace Mdq.SpecTests.Features
         await testRunner.WhenAsync("I execute selector \".paragraph(1)\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 27
-        await testRunner.ThenAsync("The result text should be:", "```\r\nFirst code block is indented\r\nby four spaces\r\n```", ((global::Reqnroll.Table)(null)), "Then ");
+        await testRunner.ThenAsync("The untrimmed result text should be:", "    First code block is indented\r\n    by four spaces\r\n", ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -153,7 +153,7 @@ namespace Mdq.SpecTests.Features
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("I can get the second code block", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = new global::Reqnroll.RuleInfo("Get code block", null, tagsOfRule);
-#line 35
+#line 34
     this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -168,10 +168,10 @@ namespace Mdq.SpecTests.Features
                         " fenced\r\nbut with no language\r\n```\r\n\r\n```csharp\r\nvar thirdCodeBlock = FencedWith" +
                         "Language(\r\n    \"csharp\"\r\n);\r\n```", ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 36
+#line 35
         await testRunner.WhenAsync("I execute selector \".paragraph(2)\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 37
+#line 36
         await testRunner.ThenAsync("The result text should be:", "```\r\nSecond code block is fenced\r\nbut with no language\r\n```", ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
@@ -188,7 +188,7 @@ namespace Mdq.SpecTests.Features
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("I can get the third code block", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = new global::Reqnroll.RuleInfo("Get code block", null, tagsOfRule);
-#line 45
+#line 44
     this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -203,10 +203,10 @@ namespace Mdq.SpecTests.Features
                         " fenced\r\nbut with no language\r\n```\r\n\r\n```csharp\r\nvar thirdCodeBlock = FencedWith" +
                         "Language(\r\n    \"csharp\"\r\n);\r\n```", ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 46
+#line 45
         await testRunner.WhenAsync("I execute selector \".paragraph(3)\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 47
+#line 46
         await testRunner.ThenAsync("The result text should be:", "```csharp\r\nvar thirdCodeBlock = FencedWithLanguage(\r\n    \"csharp\"\r\n);\r\n```", ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
@@ -223,7 +223,7 @@ namespace Mdq.SpecTests.Features
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("I can get the first code block raw", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = new global::Reqnroll.RuleInfo("Get code block raw", null, tagsOfRule);
-#line 76
+#line 75
     this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -233,15 +233,15 @@ namespace Mdq.SpecTests.Features
             else
             {
                 await this.ScenarioStartAsync();
-#line 59
+#line 58
         await testRunner.GivenAsync("I have markdown text:", "    First code block is indented\r\n    by four spaces\r\n\r\n```\r\nSecond code block is" +
                         " fenced\r\nbut with no language\r\n```\r\n\r\n```csharp\r\nvar thirdCodeBlock = FencedWith" +
                         "Language(\r\n    \"csharp\"\r\n);\r\n```", ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 77
+#line 76
         await testRunner.WhenAsync("I execute selector \".paragraph(1).text\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 78
+#line 77
         await testRunner.ThenAsync("The result text should be:", "First code block is indented\r\nby four spaces", ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
@@ -258,7 +258,7 @@ namespace Mdq.SpecTests.Features
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("I can get the second code block raw", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = new global::Reqnroll.RuleInfo("Get code block raw", null, tagsOfRule);
-#line 84
+#line 83
     this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -268,15 +268,15 @@ namespace Mdq.SpecTests.Features
             else
             {
                 await this.ScenarioStartAsync();
-#line 59
+#line 58
         await testRunner.GivenAsync("I have markdown text:", "    First code block is indented\r\n    by four spaces\r\n\r\n```\r\nSecond code block is" +
                         " fenced\r\nbut with no language\r\n```\r\n\r\n```csharp\r\nvar thirdCodeBlock = FencedWith" +
                         "Language(\r\n    \"csharp\"\r\n);\r\n```", ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 85
+#line 84
         await testRunner.WhenAsync("I execute selector \".paragraph(2).text\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 86
+#line 85
         await testRunner.ThenAsync("The result text should be:", "Second code block is fenced\r\nbut with no language", ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
@@ -293,7 +293,7 @@ namespace Mdq.SpecTests.Features
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("I can get the third code block raw", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = new global::Reqnroll.RuleInfo("Get code block raw", null, tagsOfRule);
-#line 92
+#line 91
     this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -303,15 +303,15 @@ namespace Mdq.SpecTests.Features
             else
             {
                 await this.ScenarioStartAsync();
-#line 59
+#line 58
         await testRunner.GivenAsync("I have markdown text:", "    First code block is indented\r\n    by four spaces\r\n\r\n```\r\nSecond code block is" +
                         " fenced\r\nbut with no language\r\n```\r\n\r\n```csharp\r\nvar thirdCodeBlock = FencedWith" +
                         "Language(\r\n    \"csharp\"\r\n);\r\n```", ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 93
+#line 92
         await testRunner.WhenAsync("I execute selector \".paragraph(3).text\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 94
+#line 93
         await testRunner.ThenAsync("The result text should be:", "var thirdCodeBlock = FencedWithLanguage(\r\n    \"csharp\"\r\n);", ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
@@ -328,7 +328,7 @@ namespace Mdq.SpecTests.Features
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("I can filter by language", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = new global::Reqnroll.RuleInfo("Filter by language", null, tagsOfRule);
-#line 119
+#line 118
     this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -338,14 +338,14 @@ namespace Mdq.SpecTests.Features
             else
             {
                 await this.ScenarioStartAsync();
-#line 104
+#line 103
         await testRunner.GivenAsync("I have markdown text:", "```csharp\r\ncsharp code\r\n```\r\n\r\n```bash\r\nbash code\r\n```\r\n\r\n```other\r\nother code\r\n`" +
                         "``", ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 120
+#line 119
         await testRunner.WhenAsync("I execute selector \".text[lang=bash]\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 121
+#line 120
         await testRunner.ThenAsync("The result text should be:", "```bash\r\nbash code\r\n```", ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }

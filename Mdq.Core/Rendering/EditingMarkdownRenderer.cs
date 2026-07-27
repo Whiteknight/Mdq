@@ -209,12 +209,24 @@ public sealed class EditingMarkdownRenderer
     private void RenderCodeBlock(CodeBlock cb, StringBuilder sb)
     {
         var content = IsTarget(cb) && _operation is Add add
-            ? $"{Str(cb.Content)}\n{add.Text}"
-            : Str(cb.Content);
+            ? [.. cb.Lines, add.Text]
+            : cb.Lines;
 
-        sb.AppendLine($"```{cb.Language}");
-        sb.AppendLine(content);
-        sb.AppendLine("```");
+        if (cb.Fenced)
+        {
+            sb.AppendLine($"```{cb.Language}");
+            foreach (var line in content)
+                sb.AppendLine(Str(line));
+            sb.AppendLine("```");
+        }
+        else
+        {
+            foreach (var line in content)
+            {
+                sb.Append(Str(cb.Indent));
+                sb.AppendLine(Str(line));
+            }
+        }
     }
 
     // -------------------------------------------------------------------------

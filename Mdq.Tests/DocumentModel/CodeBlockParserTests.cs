@@ -37,7 +37,7 @@ public class CodeBlockParserTests
         var model = ParseOk(markdown);
         var block = (DM.CodeBlock)model.TopLevelSection.Paragraphs[0];
 
-        block.Content.Value.Should().Contain("some code");
+        block.Lines[0].Value.Should().Contain("some code");
     }
 
     [Test]
@@ -48,9 +48,9 @@ public class CodeBlockParserTests
         var model = ParseOk(markdown);
         var block = (DM.CodeBlock)model.TopLevelSection.Paragraphs[0];
 
-        block.Content.Value.Should().Contain("line one");
-        block.Content.Value.Should().Contain("line two");
-        block.Content.Value.Should().Contain("line three");
+        block.Lines[0].Value.Should().Contain("line one");
+        block.Lines[1].Value.Should().Contain("line two");
+        block.Lines[2].Value.Should().Contain("line three");
     }
 
     // -------------------------------------------------------------------------
@@ -87,7 +87,7 @@ public class CodeBlockParserTests
         var model = ParseOk(markdown);
         var block = (DM.CodeBlock)model.TopLevelSection.Paragraphs[0];
 
-        block.Content.Value.Should().NotContain("python");
+        block.Lines[0].Value.Should().NotContain("python");
     }
 
     // -------------------------------------------------------------------------
@@ -179,7 +179,7 @@ public class CodeBlockParserTests
         var model = ParseOk(markdown);
         var block = model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.CodeBlock>().Subject;
 
-        block.Content.Value.Should().Contain("code");
+        block.Lines[0].Value.Should().Contain("code");
     }
 
     // -------------------------------------------------------------------------
@@ -194,7 +194,7 @@ public class CodeBlockParserTests
         var model = ParseOk(markdown);
         var block = (DM.CodeBlock)model.TopLevelSection.Paragraphs[0];
 
-        block.Content.Value.Should().Contain("`template`");
+        block.Lines[0].Value.Should().Contain("`template`");
     }
 
     [Test]
@@ -205,7 +205,7 @@ public class CodeBlockParserTests
         var model = ParseOk(markdown);
         var block = (DM.CodeBlock)model.TopLevelSection.Paragraphs[0];
 
-        block.Content.Value.Should().Contain("a``b");
+        block.Lines[0].Value.Should().Contain("a``b");
     }
 
     // -------------------------------------------------------------------------
@@ -231,8 +231,8 @@ public class CodeBlockParserTests
         var model = ParseOk(markdown);
         var block = (DM.CodeBlock)model.TopLevelSection.Paragraphs[0];
 
-        block.Content.Value.Should().Contain("indented code");
-        block.Content.Value.Should().NotStartWith(" ",
+        block.Lines[0].Value.Should().Contain("indented code");
+        block.Lines[0].Value.Should().NotStartWith(" ",
             "the leading indent should be stripped from the content");
     }
 
@@ -244,8 +244,8 @@ public class CodeBlockParserTests
         var model = ParseOk(markdown);
         var block = (DM.CodeBlock)model.TopLevelSection.Paragraphs[0];
 
-        block.Content.Value.Should().Contain("line one");
-        block.Content.Value.Should().Contain("line two");
+        block.Lines[0].Value.Should().Contain("line one");
+        block.Lines[1].Value.Should().Contain("line two");
     }
 
     [Test]
@@ -400,7 +400,7 @@ public class CodeBlockParserTests
         var model = ParseOk(markdown);
         var block = model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.CodeBlock>().Subject;
 
-        block.Content.Value.Should().Contain("more",
+        block.Lines[1].Value.Should().Contain("more",
             "the four-backtick line should not be mistaken for the closing fence, so 'more' should appear in content");
     }
 
@@ -416,8 +416,8 @@ public class CodeBlockParserTests
         var model = ParseOk(markdown);
         var block = model.TopLevelSection.Paragraphs[0].Should().BeOfType<DM.CodeBlock>().Subject;
 
-        block.Content.Value.Should().Contain("line one");
-        block.Content.Value.Should().Contain("line two");
+        block.Lines[0].Value.Should().Contain("line one");
+        block.Lines[1].Value.Should().Contain("line two");
     }
 
     [Test]

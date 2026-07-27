@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using Mdq.Core.DocumentModel;
 using Mdq.Core.Editing;
 using Mdq.Core.Shared;
+using Microsoft.Extensions.Primitives;
 
 namespace Mdq.Tests.Editing;
 
@@ -19,7 +20,7 @@ public class EditValidatorTests
         new(ListKind.Bulleted, [new ListItem("item", ListKind.Bulleted, 1, null)], 1);
 
     private static CodeBlock ACodeBlock() =>
-        new(null, "code", 1);
+        new(null, ["code"], 1, true, StringSegment.Empty);
 
     private static BlockQuote ABlockQuote() =>
         new("quote", 1);

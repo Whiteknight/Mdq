@@ -27,7 +27,7 @@ public sealed record MdqStepDefinitions(ScenarioContext Context)
         var results = QueryExecutor.Execute(doc, chain).Match(r => r, e => throw new Exception(e.Message));
         Context["result"] = results;
 
-        var output = new MarkdownRenderer().Render(results).Trim();
+        var output = new MarkdownRenderer().Render(results);
         Context["output"] = output;
     }
 
@@ -36,5 +36,12 @@ public sealed record MdqStepDefinitions(ScenarioContext Context)
     {
         var output = Context.Get<string>("output");
         output.Trim().Should().Be(expected.Trim());
+    }
+
+    [Then("The untrimmed result text should be:")]
+    public void TheUntrimmedResultTextShouldBe(string expected)
+    {
+        var output = Context.Get<string>("output");
+        output.Should().Be(expected);
     }
 }

@@ -97,15 +97,22 @@ public static partial class MarkdownParser
 
             break;
         }
+
+        // Leading and Trailing trivia should already be accounted for in each individual item
         return (new ListBlock(ListKind.Bulleted, items, paragraphIndex), buffer);
     }
 
     private static (ListItem Item, StringSegment Remainder) ParseUnorderedListItem(StringSegment buffer, int index)
     {
-        var (hasBullet, indent, leadingTrivia) = GetUnorderedListMarker(buffer);
+        var (_, _, leadingTrivia) = GetUnorderedListMarker(buffer);
         buffer = buffer.Subsegment(leadingTrivia.Length);
         (var line, buffer, var lineEnding) = ReadLine(buffer, true);
-        return (new ListItem(line, ListKind.Bulleted, index) { LeadingTrivia = leadingTrivia, TrailingTrivia = lineEnding }, buffer);
+        var item = new ListItem(line, ListKind.Bulleted, index)
+        {
+            LeadingTrivia = leadingTrivia,
+            TrailingTrivia = lineEnding
+        };
+        return (item, buffer);
     }
 
     private static (ListBlock Paragraph, StringSegment Remainder) ParseOrderedList(StringSegment buffer, int paragraphIndex, int indent)
@@ -145,6 +152,8 @@ public static partial class MarkdownParser
 
             break;
         }
+
+        // Leading and trailing trivia are accounted for by each individual list item
         return (new ListBlock(ListKind.Numbered, items, paragraphIndex), buffer);
     }
 
@@ -153,6 +162,11 @@ public static partial class MarkdownParser
         var (_, _, leadingTrivia) = GetOrderedListMarker(buffer);
         buffer = buffer.Subsegment(leadingTrivia.Length);
         (var line, buffer, var lineEnding) = ReadLine(buffer, true);
-        return (new ListItem(line, ListKind.Numbered, index) { LeadingTrivia = leadingTrivia, TrailingTrivia = lineEnding }, buffer);
+        var item = new ListItem(line, ListKind.Numbered, index)
+        {
+            LeadingTrivia = leadingTrivia,
+            TrailingTrivia = lineEnding
+        };
+        return (item, buffer);
     }
 }

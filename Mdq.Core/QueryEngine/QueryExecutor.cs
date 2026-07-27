@@ -80,7 +80,7 @@ public static class QueryExecutor
                 Section s => s.Paragraphs.Cast<MatchableItem>(),
                 Heading h and { Text: { } } => [new SyntheticTextBlock(h.Text, 1, h) { TrailingTrivia = h.TrailingTrivia }],
                 ListItem li => [new SyntheticTextBlock(li.Content, 1, li)],
-                CodeBlock cb => [new SyntheticTextBlock(cb.Content, 1, cb)],
+                CodeBlock cb => [SyntheticTextBlock.New(cb.Lines, 1, cb)],
                 // TODO: Should a Paragraph here (besides the CodeBlock) resolve to itself?
                 _ => []
             })

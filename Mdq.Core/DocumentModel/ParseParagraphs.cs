@@ -10,6 +10,10 @@ public static partial class MarkdownParser
         int paragraphIndex = 1;
         while (!IsAtEnd(buffer) && !IsEntirelyWhitespace(buffer))
         {
+            // Read a line. If it's empty we can advance
+            // If it's a heading, we break from here and will start a new section.
+            // If the line is non-trivial we will parse the paragraph.
+            // "line" and "remainder" here are discarded and we just continue parsing the buffer.
             var (line, remainder, _) = ReadLine(buffer, true);
             if (line.Length == 0)
             {
@@ -37,8 +41,7 @@ public static partial class MarkdownParser
 
     private static (Paragraph Paragraph, StringSegment Remainder) ParseParagraph(StringSegment buffer, int paragraphIndex)
     {
-        // TODO: This only covers the simple textblock case, it doesn't cover lists, block quotes, code blocks, or tables. Those will need to be handled separately.
-        Paragraph? paragraph = null;
+        Paragraph? paragraph;
         StringSegment remainder;
 
         var (hasIndentedCodeBlock, _, _) = GetIndentedCodeBlockStart(buffer);

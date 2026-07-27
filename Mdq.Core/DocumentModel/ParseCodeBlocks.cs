@@ -1,5 +1,4 @@
-﻿using System.Text;
-using Microsoft.Extensions.Primitives;
+﻿using Microsoft.Extensions.Primitives;
 
 namespace Mdq.Core.DocumentModel;
 
@@ -21,7 +20,7 @@ public static partial class MarkdownParser
     {
         (_, var firstLineIndent, _) = GetIndentedCodeBlockStart(buffer);
 
-        var sb = new StringBuilder();
+        var lines = new List<StringSegment>();
         StringSegment current = buffer;
         while (!IsAtEnd(current))
         {
@@ -36,13 +35,15 @@ public static partial class MarkdownParser
             if (!lineIndent.Equals(firstLineIndent, StringComparison.Ordinal))
                 break;
 
-            sb.Append(line.Subsegment(firstLineIndent.Length).AsSpan());
-            sb.Append(lineEnding.AsSpan());
+            lines.Add(line.Subsegment(firstLineIndent.Length));
             current = nextCurrent;
         }
 
-        buffer = current;
-        return (new CodeBlock(StringSegment.Empty, sb.ToString(), paragraphIndex) { LeadingTrivia = firstLineIndent }, buffer);
+        var cb = new CodeBlock(StringSegment.Empty, lines, paragraphIndex, false, firstLineIndent)
+        {
+            LeadingTrivia = firstLineIndent
+        };
+        return (cb, current);
     }
 
     private static (bool IsCodeBlock, StringSegment Marker, StringSegment Language, StringSegment TrailingTrivia, StringSegment Remainder) GetFencedCodeBlockStart(StringSegment buffer)
@@ -62,31 +63,40 @@ public static partial class MarkdownParser
     private static (Paragraph Paragraph, StringSegment Remainder) ParseFencedCodeBlock(StringSegment buffer, int paragraphIndex)
     {
         (_, var marker, var language, var trailingTrivia, buffer) = GetFencedCodeBlockStart(buffer);
-        int index = 0;
+        var lines = new List<StringSegment>();
         bool foundCloseFence = false;
         StringSegment closeFence;
-        StringSegment current = buffer;
-        while (!IsAtEnd(current))
+        while (!IsAtEnd(buffer))
         {
-            (var line, current, var lineEnding) = ReadLine(current, true);
+            (var line, buffer, var lineEnding) = ReadLine(buffer, true);
             if (line.Equals("```", StringComparison.Ordinal))
             {
                 foundCloseFence = true;
                 closeFence = line.Subsegment(0, 3);
+                // TODO: Capture the close fence as part of the trailing trivia, for reconstruction
                 break;
             }
 
-            index += line.Length + lineEnding.Length;
+            lines.Add(line);
         }
 
-        var contents = buffer.Subsegment(0, index);
-        buffer = current;
-
         if (!foundCloseFence)
-            return (new CodeBlock(language, contents, paragraphIndex) { LeadingTrivia = marker }, StringSegment.Empty);
+        {
+            // TODO: Being kind of sloppy here about keeping track of all the various bits of trivia and markers.
+            var cb = new CodeBlock(language, lines, paragraphIndex, true, StringSegment.Empty)
+            {
+                LeadingTrivia = marker
+            };
+            return (cb, StringSegment.Empty);
+        }
 
         (trailingTrivia, var remainder) = GatherTrivia(buffer);
         // TODO: Being kind of sloppy here about keeping track of all the various bits of trivia and markers.
-        return (new CodeBlock(language, contents, paragraphIndex) { LeadingTrivia = marker, TrailingTrivia = trailingTrivia }, remainder);
+        var cbi = new CodeBlock(language, lines, paragraphIndex, true, StringSegment.Empty)
+        {
+            LeadingTrivia = marker,
+            TrailingTrivia = trailingTrivia
+        };
+        return (cbi, remainder);
     }
 }

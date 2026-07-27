@@ -18,6 +18,21 @@ public static partial class MarkdownParser
         };
     }
 
+    private static (Section Section, StringSegment Remainder) ParseSection(StringSegment buffer, int currentLevel)
+    {
+        (var startTrivia, buffer) = GatherTrivia(buffer);
+        (var heading, buffer) = ParseHeading(buffer);
+        (var paragraphs, buffer) = ParseParagraphs(buffer);
+        (var sections, buffer) = ParseSections(buffer, currentLevel + 1);
+        (var trailingTrivia, buffer) = GatherTrivia(buffer);
+        var section = new Section(heading, paragraphs, sections)
+        {
+            LeadingTrivia = startTrivia,
+            TrailingTrivia = trailingTrivia
+        };
+        return (section, buffer);
+    }
+
     private static (int Count, StringSegment Remainder) CountHeadingMarkers(StringSegment buffer)
     {
         // Heading: 1-6 '#', a space, and then the remainder of the text on that line
@@ -39,6 +54,10 @@ public static partial class MarkdownParser
 
     private static (Heading Heading, StringSegment Remainder) ParseHeading(StringSegment buffer)
     {
+        // NOTE: ParseHeading is only called from ParseSection and leading whitespace is already
+        // accounted for by the section. The "LeadingTrivia" here will be the hashes and spaces
+        // prior to the heading name.
+
         // Gather up leading Hashes and leading whitespace for our leading trivia
         (var hashes, _) = CountHeadingMarkers(buffer);
         Debug.Assert(hashes > 0);
@@ -46,10 +65,10 @@ public static partial class MarkdownParser
         while (index < buffer.Length && char.IsWhiteSpace(buffer[index]))
             index++;
         var leading = buffer.Subsegment(0, index);
-        var remainder = buffer.Subsegment(index);
+        buffer = buffer.Subsegment(index);
 
         // Read the rest of the line
-        (var line, remainder, var _) = ReadLine(remainder, false);
+        (var line, buffer, var _) = ReadLine(buffer, false);
 
         // Trim trailing whitespace and '#' characters
         // '## HEADING ##' is the same as '## HEADING', so we strip off the trailing hashes.
@@ -71,23 +90,13 @@ public static partial class MarkdownParser
         }
         line = line.Subsegment(0, rIndex + 1);
         // TODO: Should we include trailing hashes in the trailing trivia?
-        (var trailingTrivia, remainder) = GatherTrivia(remainder);
-        return (new Heading(line, hashes) { LeadingTrivia = leading, TrailingTrivia = trailingTrivia }, remainder);
-    }
-
-    private static (Section Section, StringSegment Remainder) ParseSection(StringSegment buffer, int currentLevel)
-    {
-        (var startTrivia, buffer) = GatherTrivia(buffer);
-        (var heading, buffer) = ParseHeading(buffer);
-        (var paragraphs, buffer) = ParseParagraphs(buffer);
-        (var sections, buffer) = ParseSections(buffer, currentLevel + 1);
-        var (trailingTrivia, remainder) = GatherTrivia(buffer);
-        var section = new Section(heading, paragraphs, sections)
+        (var trailingTrivia, buffer) = GatherTrivia(buffer);
+        var heading = new Heading(line, hashes)
         {
-            LeadingTrivia = startTrivia,
+            LeadingTrivia = leading,
             TrailingTrivia = trailingTrivia
         };
-        return (section, remainder);
+        return (heading, buffer);
     }
 
     private static (List<Section> Sections, StringSegment Remainder) ParseSections(StringSegment buffer, int currentLevel)

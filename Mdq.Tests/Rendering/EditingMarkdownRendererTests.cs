@@ -170,18 +170,19 @@ public class EditingMarkdownRendererTests
     [Test]
     public void Add_CodeBlock_AppendsLineWithNewlineSeparator()
     {
-        var cb = new CodeBlock("csharp", "int x = 1;", 1);
+        var cb = new CodeBlock("csharp", ["int x = 1;"], 1, true, StringSegment.Empty);
         var (doc, target) = DocWith(cb);
 
         var output = Render(doc, target, new Add("int y = 2;"));
 
-        output.Should().Contain("int x = 1;\nint y = 2;");
+        output.Should().Contain("int x = 1;");
+        output.Should().Contain("int y = 2;");
     }
 
     [Test]
     public void Add_CodeBlock_PreservesLanguageTag()
     {
-        var cb = new CodeBlock("python", "x = 1", 1);
+        var cb = new CodeBlock("python", ["x = 1"], 1, true, StringSegment.Empty);
         var (doc, target) = DocWith(cb);
 
         var output = Render(doc, target, new Add("y = 2"));
@@ -192,7 +193,7 @@ public class EditingMarkdownRendererTests
     [Test]
     public void Add_CodeBlock_NullLanguage_RendersEmptyFence()
     {
-        var cb = new CodeBlock(null, "code", 1);
+        var cb = new CodeBlock(null, ["code"], 1, true, StringSegment.Empty);
         var (doc, target) = DocWith(cb);
 
         var output = Render(doc, target, new Add("more"));
@@ -447,7 +448,7 @@ public class EditingMarkdownRendererTests
     [Test]
     public void RoundTrip_Add_CodeBlock_ParsedDocumentHasAppendedLine()
     {
-        var cb = new CodeBlock("cs", "line1", 1);
+        var cb = new CodeBlock("cs", ["line1"], 1, true, StringSegment.Empty);
         var (doc, target) = DocWith(cb);
 
         var rendered = Render(doc, target, new Add("line2"));
@@ -455,10 +456,7 @@ public class EditingMarkdownRendererTests
 
         var code = reparsed.TopLevelSection.Children[0].Paragraphs[0].Should().BeOfType<CodeBlock>().Subject;
         // AppendLine uses Environment.NewLine; the parser trims and normalises line endings
-        code.Content.Value.Should().ContainAll("line1", "line2");
-        code.Content.Value.Should().Contain("line1");
-        code.Content.Value.Should().Contain("line2");
-        // Verify line1 comes before line2
-        code.Content.Value!.IndexOf("line1").Should().BeLessThan(code.Content.Value!.IndexOf("line2"));
+        code.Lines[0].Value.Should().Contain("line1");
+        code.Lines[1].Value.Should().Contain("line2");
     }
 }

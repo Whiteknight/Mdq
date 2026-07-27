@@ -24,12 +24,11 @@ Rule: Get code block
 
     Scenario: I can get the first code block
         When I execute selector ".paragraph(1)"
-        Then The result text should be:
+        Then The untrimmed result text should be:
             """
-            ```
-            First code block is indented
-            by four spaces
-            ```
+                First code block is indented
+                by four spaces
+
             """
 
     Scenario: I can get the second code block
